@@ -1,0 +1,297 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Chakra+Petch:wght@400;600;700&display=swap');
+
+/**
+ * Battletoads-inspired theme for documentation
+ * Colors based on:
+ * - Neon Green: #39ff14
+ * - Dark Purple: #2a0134
+ * - Bright Pink: #ff00ff
+ * - Electric Blue: #00ffff
+ * - Retro Black: #0a0a0a
+ */
+
+/* Root Variables */
+:root {
+  --ifm-color-primary: #39ff14;
+  --ifm-color-primary-dark: #33e612;
+  --ifm-color-primary-darker: #2ed011;
+  --ifm-color-primary-darkest: #26ab0e;
+  --ifm-color-primary-light: #4dff2e;
+  --ifm-color-primary-lighter: #5aff3d;
+  --ifm-color-primary-lightest: #78ff64;
+
+  /* Custom Theme Colors */
+  --battletoads-neon: #39ff14;
+  --battletoads-purple: #2a0134;
+  --battletoads-pink: #ff00ff;
+  --battletoads-blue: #00ffff;
+  --battletoads-dark: #0a0a0a;
+
+  /* Base Configuration */
+  --ifm-background-color: #0a0a0a;
+  --ifm-navbar-background-color: #12001a;
+  --ifm-footer-background-color: #12001a;
+
+  /* Typography */
+  --ifm-font-family-base: 'Chakra Petch', system-ui, -apple-system, sans-serif;
+  --ifm-heading-font-family: 'Press Start 2P', 'Chakra Petch', system-ui;
+  --ifm-font-size-base: 16px;
+  --ifm-line-height-base: 1.65;
+  --ifm-heading-line-height: 1.5;
+}
+
+
+/* General Styles */
+body {
+  color: #ffffff;
+  background: linear-gradient(
+          180deg,
+          var(--battletoads-dark) 0%,
+          var(--battletoads-purple) 100%
+  );
+  text-shadow: 0 0 5px rgba(57, 255, 20, 0.3);
+}
+
+/* Navbar Styling */
+.navbar {
+  border-bottom: 2px solid var(--battletoads-neon);
+  box-shadow: 0 0 10px rgba(57, 255, 20, 0.3);
+}
+
+.navbar__title {
+  font-family: 'Press Start 2P';
+  font-size: 1.2rem;
+  color: var(--battletoads-neon);
+  text-shadow: 0 0 8px rgba(57, 255, 20, 0.5);
+}
+
+.navbar__link {
+  font-family: 'Chakra Petch';
+  font-weight: 600;
+}
+
+.navbar__link:hover {
+  color: var(--battletoads-pink);
+  text-shadow: 0 0 8px rgba(255, 0, 255, 0.5);
+}
+
+/* Button Styling */
+.button {
+  font-family: 'Press Start 2P';
+  font-size: 0.8rem;
+  background-color: var(--battletoads-purple);
+  border: 2px solid var(--battletoads-neon);
+  box-shadow: 0 0 10px rgba(57, 255, 20, 0.3);
+  color: var(--battletoads-neon);
+  padding: 0.75rem 1.5rem;
+  transition: all 0.2s ease;
+}
+
+.button:hover {
+  background-color: var(--battletoads-neon);
+  color: var(--battletoads-purple);
+  box-shadow: 0 0 20px rgba(57, 255, 20, 0.5);
+  transform: translateY(-2px);
+}
+
+/* Card Styling */
+.card {
+  background-color: rgba(42, 1, 52, 0.7);
+  border: 2px solid var(--battletoads-neon);
+  box-shadow: 0 0 15px rgba(57, 255, 20, 0.2);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 20px rgba(57, 255, 20, 0.4);
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Press Start 2P';
+  color: var(--battletoads-neon);
+  text-shadow: 0 0 10px rgba(57, 255, 20, 0.4);
+  letter-spacing: 1px;
+  line-height: 1.5;
+}
+
+h1 {
+  font-size: 2rem;
+  margin-bottom: 2rem;
+}
+
+h2 {
+  font-size: 1.5rem;
+  color: var(--battletoads-blue);
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.4);
+}
+
+/* Sidebar Navigation */
+.menu {
+  font-family: 'Chakra Petch';
+  background-color: rgba(42, 1, 52, 0.5);
+  padding: 1rem;
+}
+
+.menu__link {
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  font-weight: 600;
+}
+
+.menu__link:hover {
+  background-color: rgba(57, 255, 20, 0.1);
+  color: var(--battletoads-neon);
+}
+
+.menu__link--active {
+  background-color: rgba(57, 255, 20, 0.15);
+  color: var(--battletoads-neon);
+  text-shadow: 0 0 5px rgba(57, 255, 20, 0.5);
+}
+
+/* Code Blocks */
+.prism-code {
+  background-color: rgba(10, 10, 10, 0.9) !important;
+  border: 1px solid var(--battletoads-neon);
+  box-shadow: 0 0 10px rgba(57, 255, 20, 0.2);
+  font-family: 'Chakra Petch', monospace;
+  font-size: 0.9rem;
+}
+
+/* Inline Code */
+code {
+  background-color: rgba(57, 255, 20, 0.1);
+  border: 1px solid rgba(57, 255, 20, 0.3);
+  color: var(--battletoads-neon);
+}
+
+/* Alerts */
+.alert {
+  background-color: rgba(42, 1, 52, 0.7);
+  border: 1px solid var(--battletoads-neon);
+  box-shadow: 0 0 10px rgba(57, 255, 20, 0.2);
+}
+
+.alert--info {
+  border-color: var(--battletoads-blue);
+}
+
+.alert--success {
+  border-color: var(--battletoads-neon);
+}
+
+.alert--warning {
+  border-color: var(--battletoads-pink);
+}
+
+/* Footer */
+.footer {
+  border-top: 2px solid var(--battletoads-neon);
+  box-shadow: 0 0 10px rgba(57, 255, 20, 0.3);
+}
+
+.footer__link-item:hover {
+  color: var(--battletoads-neon);
+  text-shadow: 0 0 5px rgba(57, 255, 20, 0.5);
+}
+
+/* Links */
+a {
+  color: var(--battletoads-neon);
+  font-weight: 600;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--battletoads-pink);
+  text-shadow: 0 0 5px rgba(255, 0, 255, 0.5);
+}
+
+/* Tables */
+table {
+  border: 1px solid var(--battletoads-neon);
+  box-shadow: 0 0 10px rgba(57, 255, 20, 0.2);
+}
+
+th {
+  background-color: rgba(57, 255, 20, 0.1);
+  border-bottom: 2px solid var(--battletoads-neon);
+  font-family: 'Press Start 2P';
+  font-size: 0.8rem;
+  color: var(--battletoads-neon);
+}
+
+td {
+  border: 1px solid rgba(57, 255, 20, 0.3);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--battletoads-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--battletoads-neon);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--battletoads-pink);
+}
+
+/* Dark mode adjustments */
+[data-theme='dark'] {
+  --ifm-background-color: var(--battletoads-dark);
+  --ifm-navbar-background-color: rgba(42, 1, 52, 0.95);
+  --ifm-footer-background-color: rgba(42, 1, 52, 0.95);
+}
+
+/* Special Effects */
+@keyframes neon-pulse {
+  0% { text-shadow: 0 0 5px rgba(57, 255, 20, 0.3); }
+  50% { text-shadow: 0 0 15px rgba(57, 255, 20, 0.5); }
+  100% { text-shadow: 0 0 5px rgba(57, 255, 20, 0.3); }
+}
+
+.navbar__brand {
+  animation: neon-pulse 2s infinite;
+}
+
+/* Markdown Content */
+.markdown {
+  font-family: 'Chakra Petch';
+  line-height: 1.7;
+}
+
+.markdown strong {
+  color: var(--battletoads-pink);
+  font-weight: 700;
+}
+
+.markdown em {
+  color: var(--battletoads-blue);
+  font-style: italic;
+}
+
+/* Tabs */
+.tabs {
+  border-bottom: 2px solid var(--battletoads-neon);
+}
+
+.tabs__item {
+  font-family: 'Chakra Petch';
+  font-weight: 600;
+}
+
+.tabs__item--active {
+  border-bottom-color: var(--battletoads-neon) !important;
+  color: var(--battletoads-neon) !important;
+}

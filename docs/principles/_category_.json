@@ -1,0 +1,8 @@
+{
+  "label": "Design Principles",
+  "position": 1,
+  "link": {
+    "type": "generated-index",
+    "description": "Essential software design principles for creating maintainable and scalable applications."
+  }
+}
