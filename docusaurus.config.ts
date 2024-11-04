@@ -16,13 +16,12 @@ const config: Config = {
     defaultLocale: 'en',
     locales: ['en'],
   },
-
   presets: [
     [
       'classic',
       ({
         docs: {
-          routeBasePath: '/',
+          routeBasePath: '/', // Important: This makes docs the homepage
           sidebarPath: require.resolve('./sidebars.js'),
         },
         blog: false,
@@ -40,6 +39,11 @@ const config: Config = {
           logo: {
             alt: 'Gonzalo-Munoz Logo',
             src: 'img/logo.svg',
+          },
+          colorMode: {
+            defaultMode: 'dark',
+            disableSwitch: false,
+            respectPrefersColorScheme: false,
           },
           items: [
             {
