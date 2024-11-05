@@ -40,11 +40,6 @@ const config: Config = {
             alt: 'Gonzalo-Munoz Logo',
             src: 'img/logo.svg',
           },
-          colorMode: {
-            defaultMode: 'dark',
-            disableSwitch: false,
-            respectPrefersColorScheme: false,
-          },
           items: [
             {
               type: 'docSidebar',
