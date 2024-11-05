@@ -5,14 +5,17 @@ phases:
     runtime-versions:
       nodejs: 18
     commands:
-      - npm ci
+      - npm install
 
   build:
     commands:
       - npm run build
+      - ls -la #to verify files
+      - ls -la build/ #to verify build folder
 
   post_build:
     commands:
+      - aws s3 ls s3://guide.gonzalo-munoz.com
       - aws s3 sync build/ s3://guide.gonzalo-munoz.com --delete
 
 artifacts:

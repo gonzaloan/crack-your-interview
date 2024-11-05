@@ -54,7 +54,7 @@ const config: Config = {
               items: [
                 {
                   label: 'Design Principles',
-                  to: '/docs/category/principles',
+                  to: 'principles/solid/introduction',
                 },
                 {
                   label: 'Java Advanced',
