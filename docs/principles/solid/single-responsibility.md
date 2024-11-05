@@ -14,7 +14,7 @@ The SRP states that a class should only have one reason to change. This means:
 - Changes to one aspect of the software should only affect classes responsible for that aspect.
 - Responsibilities should be clearly defined and encapsulated.
 
-### ❌ Bad Practice
+## ❌ Bad Practice
 
 ```java
 // ❌ BAD PRACTICE: Class with multiple responsibilities
@@ -145,7 +145,7 @@ Problems with this implementation?
   - Hard to maintain.
   - Hard to read. 
 
-### ✅ Good Practice
+## ✅ Good Practice
 
 Let's use different components to fix this.
 

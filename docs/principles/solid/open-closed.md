@@ -17,7 +17,7 @@ Key Benefits:
 - Supports Backwards compatibility
 
 
-### ❌ Bad Practice
+## ❌ Bad Practice
 
 ```java
 // Violating OCP - Need to modify class for new payment types
@@ -55,7 +55,7 @@ Problems with this implementation?
     - Hard to read.
     - Hard to add new features. 
 
-### ✅ Good Practice
+## ✅ Good Practice
 
 Let's fix this
 
