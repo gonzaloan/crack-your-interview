@@ -23,6 +23,25 @@ const sidebars = {
             'principles/solid/dependency-inversion',
           ],
         },
+        {
+          type: 'category',
+          label: 'DRY',
+          items: [
+            'principles/dry/intro',
+            'principles/dry/implementation',
+          ],
+        },
+        // {
+        //   type: 'category',
+        //   label: 'Clean Code',
+        //   items: [
+        //     'principles/clean-code/intro',
+        //     'principles/clean-code/naming-conventions',
+        //     'principles/clean-code/functions',
+        //     'principles/clean-code/comments',
+        //     'principles/clean-code/error-handling',
+        //   ],
+        // },
       ],
     },
   ],
