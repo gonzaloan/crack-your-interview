@@ -7,8 +7,8 @@ const config: Config = {
   title: 'Crack your Interview',
   tagline: 'A complete guide to crack your technical interviews',
   favicon: 'img/favicon.ico',
-
-  url: 'https://guide.gonzalo-munoz.com',
+  url: 'https://guide.gonzalo-munoz.com', // Asegúrate que sea https
+  trailingSlash: true,
   baseUrl: '/',
   onBrokenLinks: 'warn',
   onBrokenMarkdownLinks: 'warn',

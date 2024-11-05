@@ -6,23 +6,17 @@ phases:
       nodejs: 18
     commands:
       - npm install
-
   build:
     commands:
       - npm run build
-      - ls -la #to verify files
-      - ls -la build/ #to verify build folder
-
+      - echo "Build completed"
+      - ls -la build # Para verificar los archivos
   post_build:
     commands:
-      - aws s3 ls s3://guide.gonzalo-munoz.com
       - aws s3 sync build/ s3://guide.gonzalo-munoz.com --delete
+      - aws cloudfront create-invalidation --distribution-id E1HJ7VJHGITQNV --paths "/*"
 
 artifacts:
-  base-directory: build
   files:
     - '**/*'
-
-cache:
-  paths:
-    - 'node_modules/**/*'
+  base-directory: build
