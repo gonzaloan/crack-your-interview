@@ -31,17 +31,17 @@ const sidebars = {
             'principles/dry/implementation',
           ],
         },
-        // {
-        //   type: 'category',
-        //   label: 'Clean Code',
-        //   items: [
-        //     'principles/clean-code/intro',
-        //     'principles/clean-code/naming-conventions',
-        //     'principles/clean-code/functions',
-        //     'principles/clean-code/comments',
-        //     'principles/clean-code/error-handling',
-        //   ],
-        // },
+        {
+          type: 'category',
+          label: 'Clean Code',
+          items: [
+            'principles/clean-code/intro',
+            'principles/clean-code/naming-conventions',
+            'principles/clean-code/functions',
+            'principles/clean-code/comments',
+            'principles/clean-code/error-handling',
+          ],
+        },
       ],
     },
   ],
