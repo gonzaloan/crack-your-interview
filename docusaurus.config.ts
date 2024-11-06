@@ -1,7 +1,5 @@
 import type {Config} from '@docusaurus/types';
 
-const lightCodeTheme = require('prism-react-renderer').themes.github;
-const darkCodeTheme = require('prism-react-renderer').themes.dracula;
 
 const config: Config = {
   title: 'Crack your Interview',
@@ -34,12 +32,19 @@ const config: Config = {
 
   themeConfig:
       ({
+        colorMode: {
+          defaultMode: 'dark',
+          disableSwitch: false,
+          respectPrefersColorScheme: true,
+        },
         navbar: {
           title: 'Crack Your Interview',
           logo: {
             alt: 'Gonzalo-Munoz Logo',
             src: 'img/logo.svg',
           },
+          style: 'dark',
+          hideOnScroll: true,
           items: [
             {
               type: 'doc',
@@ -130,9 +135,16 @@ const config: Config = {
           ],
           copyright: `Copyright © ${new Date().getFullYear()} Gonzalo-Munoz, Built with Docusaurus.`,
         },
+        docs: {
+          sidebar: {
+            hideable: true,
+            autoCollapseCategories: true,
+          },
+        },
         prism: {
-          theme: lightCodeTheme,
-          darkTheme: darkCodeTheme,
+          theme: require('prism-react-renderer').themes.github,
+          darkTheme: require('prism-react-renderer').themes.dracula,
+          additionalLanguages: ['java', 'kotlin', 'groovy', 'scala'],
         },
       }),
 };
