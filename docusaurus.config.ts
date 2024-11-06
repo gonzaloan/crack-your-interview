@@ -54,19 +54,19 @@ const config: Config = {
               items: [
                 {
                   label: 'Design Principles',
-                  to: 'principles/solid/introduction',
+                  to: '/principles/solid/introduction',
                 },
                 {
                   label: 'Java Advanced',
-                  to: '/docs/category/java',
+                  to: '/category/java',
                 },
                 {
                   label: 'Frameworks',
-                  to: '/docs/category/frameworks',
+                  to: '/category/frameworks',
                 },
                 {
                   label: 'Microservices',
-                  to: '/docs/category/microservices',
+                  to: '/category/microservices',
                 },
               ],
             },
@@ -85,15 +85,15 @@ const config: Config = {
               items: [
                 {
                   label: 'Getting Started',
-                  to: '/docs/index',
+                  to: '/',
                 },
                 {
                   label: 'Design Principles',
-                  to: '/docs/category/design-principles',
+                  to: '/category/design-principles',
                 },
                 {
                   label: 'Java Advanced',
-                  to: '/docs/category/java',
+                  to: '/category/java',
                 },
               ],
             },
@@ -102,15 +102,15 @@ const config: Config = {
               items: [
                 {
                   label: 'Microservices',
-                  to: '/docs/category/microservices',
+                  to: '/category/microservices',
                 },
                 {
                   label: 'Cloud',
-                  to: '/docs/category/cloud',
+                  to: '/category/cloud',
                 },
                 {
                   label: 'DevOps',
-                  to: '/docs/category/devops',
+                  to: '/category/devops',
                 },
               ],
             },
