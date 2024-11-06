@@ -44,6 +44,23 @@ const sidebars = {
         },
       ],
     },
+    {
+      type: 'category',
+      label: 'Java',
+      items: [
+        {
+          type: 'category',
+          label: 'OOP',
+          items: [
+            'java/oop/intro',
+            'java/oop/encapsulation',
+            'java/oop/inheritance',
+            'java/oop/polymorphism',
+            'java/oop/abstraction',
+          ],
+        },
+      ],
+    }
   ],
 };
 
