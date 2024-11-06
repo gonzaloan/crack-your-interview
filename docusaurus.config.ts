@@ -37,11 +37,12 @@ const config: Config = {
           disableSwitch: false,
           respectPrefersColorScheme: true,
         },
+        favicon: 'img/favicon.ico',
         navbar: {
           title: 'Crack Your Interview',
           logo: {
             alt: 'Gonzalo-Munoz Logo',
-            src: 'img/logo.svg',
+            src: 'img/logo.png',
           },
           style: 'dark',
           hideOnScroll: true,
