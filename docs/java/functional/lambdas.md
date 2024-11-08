@@ -12,44 +12,48 @@ Lambda expressions are anonymous functions that enable functional programming in
 ## Key Concepts
 
 ### Functional Interface Types
-1. **Consumer<T>**
-   ```java
-   Consumer<String> printer = s -> System.out.println(s);
-   BiConsumer<String, Integer> keyValue = (key, value) -> System.out.println(key + "=" + value);
-   ```
+
+
+1.  **`Consumer<T>`**
+
+```java
+Consumer<String> printer = s -> System.out.println(s);
+BiConsumer<String, Integer> keyValue = (key, value) -> System.out.println(key + "=" + value);
+```
 - Accepts an argument and returns nothing
 - Used for operations with side effects
 
-2. **Supplier<T>**
-   ```java
-   Supplier<UUID> uuidGenerator = UUID::randomUUID;
-   Supplier<User> userCreator = User::new;
-   ```
-    - Takes no arguments and returns a result
-    - Used for lazy evaluation and factory methods
+2. **`Supplier<T>`**
+```java
+Supplier<UUID> uuidGenerator = UUID::randomUUID;
+Supplier<User> userCreator = User::new;
+```
+- Takes no arguments and returns a result
+- Used for lazy evaluation and factory methods.
 
-3. **Function<T,R>**
-   ```java
-   Function<String, Integer> parser = Integer::parseInt;
-   BiFunction<String, Integer, String> repeater = String::repeat;
-   ```
-    - Transforms input into output
-    - Core functional interface for transformations
+3. **`Function<T,R>`**
 
-4. **Predicate<T>**
-   ```java
-   Predicate<String> isEmpty = String::isEmpty;
-   BiPredicate<String, String> contains = String::contains;
-   ```
-    - Tests a condition
-    - Returns boolean
-    - Used for filtering
+```java
+Function<String, Integer> parser = Integer::parseInt;
+BiFunction<String, Integer, String> repeater = String::repeat;
+```
+- Transforms input into output
+- Core functional interface for transformations
 
-5. **UnaryOperator<T>**
+4. **`Predicate<T>`**
+```java
+Predicate<String> isEmpty = String::isEmpty;
+BiPredicate<String, String> contains = String::contains;
+```
+- Tests a condition
+- Returns boolean
+- Used for filtering
+
+5. **`UnaryOperator<T>`**
    ```java
    UnaryOperator<String> toUpperCase = String::toUpperCase;
    ```
-    - Special case of Function where input and output types are the same
+   - Special case of Function where input and output types are the same
 
 ### Method References Types
 1. **Static Method Reference**
@@ -70,8 +74,8 @@ Lambda expressions are anonymous functions that enable functional programming in
 
 ### Important Features
 1. **Closure Scope**
-    - Access to final or effectively final variables
-    - Enclosing class members access
+   - Access to final or effectively final variables
+   - Enclosing class members access
 
 2. **Type Inference**
    ```java
@@ -80,8 +84,8 @@ Lambda expressions are anonymous functions that enable functional programming in
    ```
 
 3. **Target Typing**
-    - Lambda type is inferred from context
-    - Same lambda can be used for different functional interfaces
+   - Lambda type is inferred from context
+   - Same lambda can be used for different functional interfaces
 
 ## Examples
 

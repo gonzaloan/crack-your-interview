@@ -1,5 +1,3 @@
-import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
-
 const sidebars = {
   tutorialSidebar: [
     {
@@ -14,6 +12,7 @@ const sidebars = {
         {
           type: 'category',
           label: 'SOLID',
+          collapsed: true,
           items: [
             'principles/solid/introduction',
             'principles/solid/single-responsibility',
@@ -34,6 +33,7 @@ const sidebars = {
         {
           type: 'category',
           label: 'Clean Code',
+          collapsed: true,
           items: [
             'principles/clean-code/intro',
             'principles/clean-code/naming-conventions',
@@ -51,6 +51,7 @@ const sidebars = {
         {
           type: 'category',
           label: 'OOP',
+          collapsed: true,
           items: [
             'java/oop/intro',
             'java/oop/encapsulation',
@@ -59,6 +60,29 @@ const sidebars = {
             'java/oop/abstraction',
           ],
         },
+        {
+          type: 'category',
+          label: 'Functional Programming',
+          collapsed: true,
+          items: [
+            'java/functional/intro',
+            'java/functional/streams',
+            'java/functional/lambdas',
+            'java/functional/optional',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Advanced Features',
+          collapsed: true,
+          items: [
+            'java/advanced/intro',
+            'java/advanced/java-11-17-features',
+            'java/advanced/performance',
+            'java/advanced/memory-management',
+          ],
+        },
+
       ],
     }
   ],

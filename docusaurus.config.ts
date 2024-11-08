@@ -1,153 +1,187 @@
 import type {Config} from '@docusaurus/types';
-
+import {themes as prismThemes} from 'prism-react-renderer';
 
 const config: Config = {
   title: 'Crack your Interview',
   tagline: 'A complete guide to crack your technical interviews',
   favicon: 'img/favicon.ico',
-  url: 'https://guide.gonzalo-munoz.com', // Asegúrate que sea https
-  trailingSlash: true,
+  url: 'https://guide.gonzalo-munoz.com',
   baseUrl: '/',
-  onBrokenLinks: 'warn',
+  trailingSlash: true,
+  onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
+
   i18n: {
     defaultLocale: 'en',
     locales: ['en'],
   },
+
   presets: [
     [
       'classic',
-      ({
+      {
         docs: {
-          routeBasePath: '/', // Important: This makes docs the homepage
+          routeBasePath: '/',
           sidebarPath: require.resolve('./sidebars.js'),
+          sidebarCollapsible: true,
+          sidebarCollapsed: false,
         },
         blog: false,
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
         },
-      }),
+      },
     ],
   ],
 
-  themeConfig:
-      ({
-        colorMode: {
-          defaultMode: 'dark',
-          disableSwitch: false,
-          respectPrefersColorScheme: true,
+  themeConfig: {
+    image: 'img/social-card.jpg',
+
+    colorMode: {
+      defaultMode: 'dark',
+      disableSwitch: false,
+      respectPrefersColorScheme: true,
+    },
+
+    navbar: {
+      title: 'Crack Your Interview',
+      hideOnScroll: false,
+      style: 'dark',
+      logo: {
+        alt: 'Logo',
+        src: 'img/logo.png',
+      },
+      items: [
+        {
+          type: 'doc',
+          docId: 'index',
+          position: 'left',
+          label: 'Learning Path',
         },
-        favicon: 'img/favicon.ico',
-        navbar: {
-          title: 'Crack Your Interview',
-          logo: {
-            alt: 'Gonzalo-Munoz Logo',
-            src: 'img/logo.png',
-          },
-          style: 'dark',
-          hideOnScroll: true,
+        {
+          type: 'dropdown',
+          label: 'Quick Access',
+          position: 'left',
           items: [
             {
-              type: 'doc',
-              docId: 'index',
-              position: 'left',
-              label: 'Learning Path',
+              label: 'Design Principles',
+              to: '/principles/solid/introduction',
             },
             {
-              type: 'dropdown',
-              label: 'Quick Access',
-              position: 'left',
-              items: [
-                {
-                  label: 'Design Principles',
-                  to: '/principles/solid/introduction',
-                },
-                {
-                  label: 'Java Advanced',
-                  to: '/category/java',
-                },
-                {
-                  label: 'Frameworks',
-                  to: '/category/frameworks',
-                },
-                {
-                  label: 'Microservices',
-                  to: '/category/microservices',
-                },
-              ],
+              label: 'Java Advanced',
+              to: '/category/java',
             },
             {
-              href: 'https://github.com/gonzaloan/crack-your-interview',
+              label: 'Frameworks',
+              to: '/category/frameworks',
+            },
+            {
+              label: 'Microservices',
+              to: '/category/microservices',
+            },
+          ],
+        },
+        {
+          href: 'https://github.com/gonzaloan/crack-your-interview',
+          position: 'right',
+          className: 'header-github-link',
+          'aria-label': 'GitHub repository',
+        },
+      ],
+    },
+
+    footer: {
+      style: 'dark',
+      links: [
+        {
+          title: 'Documentation',
+          items: [
+            {
+              label: 'Getting Started',
+              to: '/',
+            },
+            {
+              label: 'Design Principles',
+              to: '/category/principles',
+            },
+            {
+              label: 'Java Advanced',
+              to: '/category/java',
+            },
+          ],
+        },
+        {
+          title: 'Advanced Topics',
+          items: [
+            {
+              label: 'Microservices',
+              to: '/category/microservices',
+            },
+            {
+              label: 'Cloud',
+              to: '/category/cloud',
+            },
+            {
+              label: 'DevOps',
+              to: '/category/devops',
+            },
+          ],
+        },
+        {
+          title: 'Community',
+          items: [
+            {
               label: 'GitHub',
-              position: 'right',
+              href: 'https://github.com/gonzaloan/crack-your-interview',
+            },
+            {
+              label: 'LinkedIn',
+              href: 'https://linkedin.com/in/mmgonzalo',
             },
           ],
         },
-        footer: {
-          style: 'dark',
-          links: [
-            {
-              title: 'Documentation',
-              items: [
-                {
-                  label: 'Getting Started',
-                  to: '/',
-                },
-                {
-                  label: 'Design Principles',
-                  to: '/category/design-principles',
-                },
-                {
-                  label: 'Java Advanced',
-                  to: '/category/java',
-                },
-              ],
-            },
-            {
-              title: 'Advanced Topics',
-              items: [
-                {
-                  label: 'Microservices',
-                  to: '/category/microservices',
-                },
-                {
-                  label: 'Cloud',
-                  to: '/category/cloud',
-                },
-                {
-                  label: 'DevOps',
-                  to: '/category/devops',
-                },
-              ],
-            },
-            {
-              title: 'Community',
-              items: [
-                {
-                  label: 'GitHub',
-                  href: 'https://github.com/gonzaloan/crack-your-interview',
-                },
-                {
-                  label: 'LinkedIn',
-                  href: 'https://linkedin.com/in/mmgonzalo',
-                },
-              ],
-            },
-          ],
-          copyright: `Copyright © ${new Date().getFullYear()} Gonzalo-Munoz, Built with Docusaurus.`,
-        },
-        docs: {
-          sidebar: {
-            hideable: true,
-            autoCollapseCategories: true,
-          },
-        },
-        prism: {
-          theme: require('prism-react-renderer').themes.github,
-          darkTheme: require('prism-react-renderer').themes.dracula,
-          additionalLanguages: ['java', 'kotlin', 'groovy', 'scala'],
-        },
-      }),
+      ],
+      copyright: `Copyright © ${new Date().getFullYear()} Gonzalo-Munoz, Built with Docusaurus.`,
+    },
+
+    prism: {
+      theme: prismThemes.github,
+      darkTheme: prismThemes.dracula,
+      additionalLanguages: ['java', 'kotlin', 'groovy', 'scala'],
+    },
+  },
+
+  // Añade configuración para mejorar el SEO y compartir en redes sociales
+  headTags: [
+    {
+      tagName: 'meta',
+      attributes: {
+        name: 'viewport',
+        content: 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no',
+      },
+    },
+    {
+      tagName: 'meta',
+      attributes: {
+        name: 'description',
+        content: 'Complete guide for mastering technical interviews with advanced Java concepts',
+      },
+    },
+    {
+      tagName: 'meta',
+      attributes: {
+        property: 'og:description',
+        content: 'Complete guide for mastering technical interviews with advanced Java concepts',
+      },
+    },
+    {
+      tagName: 'meta',
+      attributes: {
+        property: 'og:title',
+        content: 'Crack Your Interview - Advanced Java Development Guide',
+      },
+    },
+  ],
 };
 
-module.exports = config;
+export default config;
