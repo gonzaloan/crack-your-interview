@@ -1,0 +1,8 @@
+{
+  "label": "Spring Cloud",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "description": "Building cloud-native applications with Spring Cloud, including service discovery, configuration, and circuit breakers."
+  }
+}

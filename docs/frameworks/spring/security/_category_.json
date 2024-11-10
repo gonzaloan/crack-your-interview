@@ -1,0 +1,8 @@
+{
+  "label": "Spring Security",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "description": "Implementing security in Spring applications, including authentication, authorization, and OAuth2."
+  }
+}

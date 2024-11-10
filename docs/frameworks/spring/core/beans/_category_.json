@@ -1,0 +1,8 @@
+{
+  "label": "Beans",
+  "position": 1,
+  "link": {
+    "type": "generated-index",
+    "description": "Understanding Spring Beans, lifecycle, scopes, and configuration."
+  }
+}

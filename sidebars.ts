@@ -82,6 +82,25 @@ const sidebars = {
             'java/advanced/memory-management',
           ],
         },
+        {
+          type: 'category',
+          label: 'Frameworks',
+          items: [
+            {
+              type: 'category',
+              label: 'Spring',
+              items: [
+                {
+                  type: 'category',
+                  label: 'Core',
+                  items: [
+                    'frameworks/spring/core/intro',
+                  ],
+                },
+              ],
+            },
+          ]
+        }
 
       ],
     }
