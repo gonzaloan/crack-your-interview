@@ -50,6 +50,19 @@ const sidebars = {
       items: [
         {
           type: 'category',
+          label: 'Basics',
+          collapsed: true,
+          items: [
+            'java/basics/intro',
+            'java/basics/key-concepts',
+            'java/basics/java-8-features',
+            'java/basics/api-collections',
+            'java/basics/exceptions',
+
+          ],
+        },
+        {
+          type: 'category',
           label: 'OOP',
           collapsed: true,
           items: [
@@ -80,8 +93,10 @@ const sidebars = {
             'java/advanced/java-11-17-features',
             'java/advanced/performance',
             'java/advanced/memory-management',
+            'java/advanced/concurrency',
           ],
         },
+
         {
           type: 'category',
           label: 'Frameworks',
@@ -94,7 +109,7 @@ const sidebars = {
                   type: 'category',
                   label: 'Core',
                   items: [
-                    'frameworks/spring/core/intro',
+                    'java/frameworks/spring/core/intro',
                   ],
                 },
               ],

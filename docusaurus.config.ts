@@ -68,12 +68,12 @@ const config: Config = {
               to: '/principles/solid/introduction',
             },
             {
-              label: 'Java Advanced',
+              label: 'Java',
               to: '/category/java',
             },
             {
               label: 'Frameworks',
-              to: '/category/frameworks',
+              to: '/category/java/frameworks',
             },
             {
               label: 'Microservices',
