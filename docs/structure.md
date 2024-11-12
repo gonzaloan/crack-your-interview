@@ -1,71 +1,331 @@
 ```markdown
-docs/
-├── intro.md
+fundamentos/
+├── sistemas_distribuidos/
+│   ├── consistencia_disponibilidad/
+│   │   ├── eventual_consistency
+│   │   ├── strong_consistency
+│   │   ├── replication
+│   │   └── partitioning
+│   ├── patrones_distribuidos/
+│   │   ├── circuit_breaker
+│   │   ├── bulkhead
+│   │   ├── retry
+│   │   ├── fallback
+│   │   └── saga
+│   └── teorema_cap/
+│       ├── consistency
+│       ├── availability
+│       └── partition_tolerance
+└── escalabilidad/
+├── horizontal_vertical/
+│   ├── scaling_strategies
+│   ├── capacity_planning
+│   └── performance_metrics
+├── caching_strategies/
+│   ├── cache_aside
+│   ├── read_through
+│   ├── write_through
+│   ├── write_behind
+│   └── cache_eviction
+└── load_balancing/
+├── algoritmos
+├── session_persistence
+└── health_checks
+
+## 2. 💻 Expertise Técnico
+tech_expertise/
 ├── java/
-│   ├── _category_.json
-│   ├── fundamentals.md
-│   ├── oop.md
-│   ├── annotations.md
-│   ├── concurrency.md
-│   ├── lambdas.md
-│   ├── time-management.md
-│   ├── null-safety.md
-│   └── frameworks.md
+│   ├── core/
+│   │   ├── collections/
+│   │   │   ├── list_set_map
+│   │   │   ├── concurrent_collections
+│   │   │   └── streams
+│   │   ├── concurrencia/
+│   │   │   ├── threads
+│   │   │   ├── executors
+│   │   │   ├── completablefuture
+│   │   │   └── synchronization
+│   │   └── memoria_gc/
+│   │       ├── heap_stack
+│   │       ├── garbage_collectors
+│   │       ├── memory_leaks
+│   │       └── tuning
+│   ├── frameworks/
+│   │   ├── spring/
+│   │   │   ├── core
+│   │   │   ├── boot
+│   │   │   ├── security
+│   │   │   ├── cloud
+│   │   │   └── data
+│   │   └── hibernate/
+│   │       ├── mapping
+│   │       ├── caching
+│   │       ├── transactions
+│   │       └── performance
+│   └── optimizacion/
+│       ├── profiling
+│       ├── benchmarking
+│       └── tuning
+├── golang/
+│   ├── core/
+│   │   ├── goroutines/
+│   │   │   ├── concurrency_patterns
+│   │   │   ├── workerpools
+│   │   │   └── synchronization
+│   │   ├── channels/
+│   │   │   ├── buffered_unbuffered
+│   │   │   ├── select
+│   │   │   └── patterns
+│   │   └── memory_management/
+│   │       ├── garbage_collection
+│   │       ├── escape_analysis
+│   │       └── memory_profiling
+│   ├── frameworks/
+│   │   ├── gin/
+│   │   │   ├── middleware
+│   │   │   ├── routing
+│   │   │   └── validation
+│   │   └── echo/
+│   │       ├── middleware
+│   │       ├── context
+│   │       └── handlers
+│   └── tooling/
+│       ├── debugging
+│       ├── testing
+│       └── profiling
+└── bases_datos/
 ├── sql/
-│   ├── _category_.json
-│   ├── ddl-dml.md
-│   ├── optimization-design.md
-│   └── plsql.md
-├── architecture/
-│   ├── _category_.json
-│   ├── principles-patterns.md
-│   ├── microservices-distributed.md
-│   ├── cloud-patterns.md
-│   └── components-communication.md
-├── design/
-│   ├── _category_.json
-│   ├── principles.md
-│   ├── patterns.md
-│   └── ddd.md
-├── devops-security/
-│   ├── _category_.json
-│   ├── ci-cd.md
-│   ├── security.md
-│   ├── infrastructure.md
-│   └── cloud-services.md
-├── functional-programming/
-│   ├── _category_.json
-│   ├── fundamentals.md
-│   ├── advanced-concepts.md
-│   └── algorithms-recursion.md
-├── data-structures-algorithms/
-│   ├── _category_.json
-│   ├── data-structures.md
-│   ├── sorting-complexity.md
-│   └── complexity-analysis.md
-├── rest/
-│   ├── _category_.json
-│   └── fundamentals.md
-├── testing/
-│   ├── _category_.json
-│   ├── unit-tools.md
-│   ├── methods-strategies.md
-│   └── frameworks.md
-└── persistence/
-├── _category_.json
-├── fundamentals.md
-├── queries-construction.md
-├── transactions-locking.md
-├── annotations-relations.md
-└── caching-optimization.md
+│   ├── optimization
+│   ├── indexing
+│   └── transactions
+├── nosql/
+│   ├── document_stores
+│   ├── key_value
+│   └── graph_databases
+└── newSQL/
+├── distributed_sql
+├── scalability
+└── consistency
+
+## 3. 🔐 Seguridad y DevOps
+infra_seguridad/
+├── cloud/
+│   ├── aws/
+│   │   ├── ec2_ecs
+│   │   ├── lambda
+│   │   ├── s3
+│   │   └── rds
+│   ├── gcp/
+│   │   ├── compute_engine
+│   │   ├── cloud_functions
+│   │   └── cloud_storage
+│   └── azure/
+│       ├── virtual_machines
+│       ├── functions
+│       └── blob_storage
+├── contenedores/
+│   ├── docker/
+│   │   ├── networking
+│   │   ├── volumes
+│   │   └── compose
+│   └── kubernetes/
+│       ├── pods_deployments
+│       ├── services
+│       ├── ingress
+│       └── storage
+├── ci_cd/
+│   ├── jenkins/
+│   │   ├── pipelines
+│   │   ├── agents
+│   │   └── security
+│   └── github_actions/
+│       ├── workflows
+│       ├── actions
+│       └── secrets
+└── security/
+├── oauth_jwt/
+│   ├── flows
+│   ├── tokens
+│   └── claims
+├── pentesting/
+│   ├── vulnerability_scanning
+│   ├── security_testing
+│   └── remediation
+└── secure_coding/
+├── input_validation
+├── encryption
+└── access_control
+
+## 4. 📊 Sistemas y Datos
+sistemas_datos/
+├── big_data/
+│   ├── procesamiento/
+│   │   ├── batch
+│   │   ├── stream
+│   │   └── realtime
+│   └── almacenamiento/
+│       ├── data_lakes
+│       ├── data_warehouses
+│       └── distributed_storage
+├── streaming/
+│   ├── kafka/
+│   │   ├── producers
+│   │   ├── consumers
+│   │   └── streams
+│   └── rabbitmq/
+│       ├── exchanges
+│       ├── queues
+│       └── routing
+└── monitoring/
+├── logs/
+│   ├── aggregation
+│   ├── analysis
+│   └── alerting
+├── metrics/
+│   ├── collection
+│   ├── visualization
+│   └── alerting
+└── tracing/
+├── distributed_tracing
+├── span_collection
+└── analysis
+
+## 5. 🎯 Liderazgo Técnico
+liderazgo/
+├── arquitectura/
+│   ├── enterprise_patterns/
+│   │   ├── microservices
+│   │   ├── event_driven
+│   │   └── domain_driven
+│   ├── decisiones_arquitectonicas/
+│   │   ├── trade_offs
+│   │   ├── requirements
+│   │   └── constraints
+│   └── documentation/
+│       ├── adr
+│       ├── diagrams
+│       └── specifications
+├── mentoria/
+│   ├── code_reviews/
+│   │   ├── best_practices
+│   │   ├── feedback
+│   │   └── standards
+│   └── technical_guidance/
+│       ├── best_practices
+│       ├── standards
+│       └── patterns
+└── gestion/
+├── estimaciones/
+│   ├── techniques
+│   ├── risk_assessment
+│   └── planning
+├── roadmap_tecnico/
+│   ├── vision
+│   ├── milestones
+│   └── dependencies
+└── tech_strategy/
+├── innovation
+├── modernization
+└── technical_debt
+
+## 6. 🌟 Soft Skills
+soft_skills/
+├── comunicacion/
+│   ├── presentaciones_tecnicas/
+│   │   ├── ejecutivas
+│   │   ├── tecnicas
+│   │   └── stakeholders
+│   └── documentacion/
+│       ├── tecnica
+│       ├── arquitectura
+│       └── procesos
+├── liderazgo/
+│   ├── management_influencia/
+│   │   ├── delegation
+│   │   ├── motivation
+│   │   └── conflict_resolution
+│   └── coaching/
+│       ├── mentoring
+│       ├── feedback
+│       └── growth
+└── negocio/
+├── impacto_negocio/
+│   ├── cost_analysis
+│   ├── risk_assessment
+│   └── value_proposition
+└── strategy_alignment/
+├── business_goals
+├── tech_strategy
+└── roadmap_alignment
+
+
+Prompt
 
 ```
+Por favor, explica el concepto/patrón indicado siguiendo esta estructura de documentación:
 
-recuerda que en cada uno de los topicos tenemos una estructura definida
-- core understanding * *
-  *-un buen y mal ejemplo basado en ejemplos reales, con una pequeña explicación. * * - Mejores practicas al usar esto, con alguna explicacion breve. *
-  *-Casos de uso con explicacion breve. *
-  -Avoid mistakes o anti patterns que detectar.
-  -Si existen preguntas especificas asociadas al topico que sean muy interesantes o necesarias, con su respuesta.
-  -en Ingles
-- primero tienes que mandarme la estructura de folders, archivos.
+1. Crea un documento técnico detallado usando una estructura markdown que incluya:
+
+- Overview con descripción breve y analogía del mundo real
+
+- Key Concepts con todos los componentes y estados principales
+
+- Implementación con ejemplos en Java y Go
+
+- Patrones relacionados y cómo se complementan
+
+- Best Practices para configuración, monitoreo y testing
+
+- Common Pitfalls y cómo evitarlos
+
+- Use Cases con al menos 3 escenarios reales
+
+- Deep Dive Topics cubriendo thread safety, sistemas distribuidos y performance
+
+- Additional Resources incluyendo referencias y herramientas
+
+- FAQs con preguntas comunes
+
+2. El documento debe ser:
+
+- Técnicamente preciso pero accesible
+
+- Rico en ejemplos de código funcional
+
+- Enfocado en aplicaciones prácticas
+
+- Incluir diagramas o visualizaciones cuando sea relevante
+
+3. Asegúrate de incluir:
+
+- Ejemplos de código completos y funcionales
+
+- Escenarios del mundo real
+
+- Mejores prácticas actuales
+
+- Consideraciones de rendimiento y escalabilidad
+
+- Los bloques de codigo que sean multi-language code block entre Java y Go usando algo asi:
+
+// no olvidad agregar los imports 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs>
+  <TabItem value="java" label="Java">
+    ```java
+    // Java code here
+    ```
+  </TabItem>
+  <TabItem value="go" label="Go">
+    ```go
+    // Go code here
+    ```
+  </TabItem>
+</Tabs>
+
+- Pensar que esto es para un archivo .md para docusaurus
+- Puedes ocupar emojis en los titulos para temas que lo requieran
+Por favor, genera un documento técnico completo para CLEAN ARCHITECTURE EXAMPLES: MICROSERVICES siguiendo esta estructura que sea en ingles y en markdown.
+```

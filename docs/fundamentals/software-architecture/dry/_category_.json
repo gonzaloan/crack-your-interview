@@ -1,0 +1,8 @@
+{
+  "label": "DRY (Don't Repeat Yourself)",
+  "position": 5,
+  "link": {
+    "type": "generated-index",
+    "description": "The DRY principle is one of the foundational concepts in software development that aims to reduce repetition of information. Learn how to effectively implement DRY in your projects to improve maintainability and reduce bugs."
+  }
+}
