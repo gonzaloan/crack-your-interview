@@ -197,6 +197,49 @@ const sidebars = {
           ]
         }
       ]
+    },
+    {
+      type: 'category',
+      label: 'Scalability',
+      items: [
+        {
+          type: 'doc',
+          label: 'Introduction',
+          id: 'fundamentals/scalability/intro'
+        },
+        {
+          type: 'category',
+          label: 'Horizontal & Vertical',
+          collapsed: true,
+          items: [
+            'fundamentals/scalability/horizontal-vertical/scaling-strategies',
+            'fundamentals/scalability/horizontal-vertical/capacity-planning',
+            'fundamentals/scalability/horizontal-vertical/performance-metrics'
+          ]
+        },
+        {
+          type: 'category',
+          label: 'Caching Strategies',
+          collapsed: true,
+          items: [
+            'fundamentals/scalability/caching-strategies/cache-aside',
+            'fundamentals/scalability/caching-strategies/read-through',
+            'fundamentals/scalability/caching-strategies/write-through',
+            'fundamentals/scalability/caching-strategies/write-behind',
+            'fundamentals/scalability/caching-strategies/cache-eviction',
+          ]
+        },
+        {
+          type: 'category',
+          label: 'Load Balancing',
+          collapsed: true,
+          items: [
+            'fundamentals/scalability/load-balancing/algorithms',
+            'fundamentals/scalability/load-balancing/session-persistence',
+            'fundamentals/scalability/load-balancing/health-checks',
+          ]
+        },
+      ]
     }
     // {
     //   type: 'category',
