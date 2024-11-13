@@ -61,12 +61,6 @@ const config: Config = {
           label: 'Learning Path',
         },
         {
-          type: 'dropdown',
-          label: 'Quick Access',
-          position: 'left',
-          items: [],
-        },
-        {
           href: 'https://github.com/gonzaloan/crack-your-interview',
           position: 'right',
           className: 'header-github-link',
@@ -102,7 +96,6 @@ const config: Config = {
     },
   },
 
-  // Añade configuración para mejorar el SEO y compartir en redes sociales
   headTags: [
     {
       tagName: 'meta',

@@ -171,6 +171,30 @@ const sidebars = {
             'fundamentals/distributed-systems/consistency-availability/replication',
             'fundamentals/distributed-systems/consistency-availability/partitioning',
           ]
+        },
+        {
+          type: 'category',
+          label: 'Distributed Patterns',
+          collapsed: true,
+          items: [
+            'fundamentals/distributed-systems/distributed-patterns/intro',
+            'fundamentals/distributed-systems/distributed-patterns/circuit-breaker',
+            'fundamentals/distributed-systems/distributed-patterns/bulkhead',
+            'fundamentals/distributed-systems/distributed-patterns/retry',
+            'fundamentals/distributed-systems/distributed-patterns/fallback',
+            'fundamentals/distributed-systems/distributed-patterns/saga',
+          ]
+        },
+        {
+          type: 'category',
+          label: 'CAP Theorem',
+          collapsed: true,
+          items: [
+            'fundamentals/distributed-systems/cap-theorem/intro',
+            'fundamentals/distributed-systems/cap-theorem/consistency',
+            'fundamentals/distributed-systems/cap-theorem/availability',
+            'fundamentals/distributed-systems/cap-theorem/partition-tolerance',
+          ]
         }
       ]
     }

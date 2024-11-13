@@ -1,17 +1,6 @@
 ```markdown
 fundamentos/
 ├── sistemas_distribuidos/
-│   ├── consistencia_disponibilidad/
-│   │   ├── eventual_consistency
-│   │   ├── strong_consistency
-│   │   ├── replication
-│   │   └── partitioning
-│   ├── patrones_distribuidos/
-│   │   ├── circuit_breaker
-│   │   ├── bulkhead
-│   │   ├── retry
-│   │   ├── fallback
-│   │   └── saga
 │   └── teorema_cap/
 │       ├── consistency
 │       ├── availability
@@ -327,5 +316,5 @@ import TabItem from '@theme/TabItem';
 
 - Pensar que esto es para un archivo .md para docusaurus
 - Puedes ocupar emojis en los titulos para temas que lo requieran
-Por favor, genera un documento técnico completo para DISTRIBUTED SYSTEMS: PARTITIONING siguiendo esta estructura que sea en ingles y en markdown.
+Por favor, genera un documento técnico completo para CAP THEOREM: PARTITION TOLERANCE siguiendo esta estructura que sea en ingles y en markdown.
 ```
