@@ -1,10 +1,5 @@
 ```markdown
 fundamentos/
-└── escalabilidad/
-    └── load_balancing/
-        ├── algoritmos
-        ├── session_persistence
-        └── health_checks
 ├── algoritmos_estructuras/               # Nueva sección
 │   ├── estructuras_datos/
 │   │   ├── lineales/
