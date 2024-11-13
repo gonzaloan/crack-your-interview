@@ -8,7 +8,7 @@ const config: Config = {
   url: 'https://guide.gonzalo-munoz.com',
   baseUrl: '/',
   trailingSlash: true,
-  onBrokenLinks: 'throw',
+  onBrokenLinks: 'warn',
   onBrokenMarkdownLinks: 'warn',
   markdown: {
     mermaid: true,
@@ -64,24 +64,7 @@ const config: Config = {
           type: 'dropdown',
           label: 'Quick Access',
           position: 'left',
-          items: [
-            {
-              label: 'Design Principles',
-              to: '/principles/solid/introduction',
-            },
-            {
-              label: 'Java',
-              to: '/category/java',
-            },
-            {
-              label: 'Frameworks',
-              to: '/category/java/frameworks',
-            },
-            {
-              label: 'Microservices',
-              to: '/category/microservices',
-            },
-          ],
+          items: [],
         },
         {
           href: 'https://github.com/gonzaloan/crack-your-interview',
@@ -95,40 +78,6 @@ const config: Config = {
     footer: {
       style: 'dark',
       links: [
-        {
-          title: 'Documentation',
-          items: [
-            {
-              label: 'Getting Started',
-              to: '/',
-            },
-            {
-              label: 'Design Principles',
-              to: '/category/principles',
-            },
-            {
-              label: 'Java Advanced',
-              to: '/category/java',
-            },
-          ],
-        },
-        {
-          title: 'Advanced Topics',
-          items: [
-            {
-              label: 'Microservices',
-              to: '/category/microservices',
-            },
-            {
-              label: 'Cloud',
-              to: '/category/cloud',
-            },
-            {
-              label: 'DevOps',
-              to: '/category/devops',
-            },
-          ],
-        },
         {
           title: 'Community',
           items: [

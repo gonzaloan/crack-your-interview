@@ -308,7 +308,7 @@ Por favor, explica el concepto/patrón indicado siguiendo esta estructura de doc
 
 - Los bloques de codigo que sean multi-language code block entre Java y Go usando algo asi:
 
-// no olvidad agregar los imports 
+// no olvidad agregar los imports
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
