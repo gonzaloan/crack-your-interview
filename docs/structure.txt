@@ -327,5 +327,5 @@ import TabItem from '@theme/TabItem';
 
 - Pensar que esto es para un archivo .md para docusaurus
 - Puedes ocupar emojis en los titulos para temas que lo requieran
-Por favor, genera un documento técnico completo para CLEAN ARCHITECTURE EXAMPLES: MICROSERVICES siguiendo esta estructura que sea en ingles y en markdown.
+Por favor, genera un documento técnico completo para DISTRIBUTED SYSTEMS: PARTITIONING siguiendo esta estructura que sea en ingles y en markdown.
 ```

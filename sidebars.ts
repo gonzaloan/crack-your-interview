@@ -93,10 +93,9 @@ const sidebars = {
           collapsed: true,
           items: [
             {
-              type: 'category',
+              type: 'doc',
               label: 'Introduction',
-              collapsed: true,
-              items: ['fundamentals/software-architecture/clean-architecture/intro']
+              id: 'fundamentals/software-architecture/clean-architecture/intro'
             },
             {
               type: 'category',
@@ -153,6 +152,28 @@ const sidebars = {
         },
       ]
     },
+    {
+      type: 'category',
+      label: 'Distributed Systems',
+      items: [
+        {
+          type: 'doc',
+          label: 'Introduction',
+          id: 'fundamentals/distributed-systems/intro'
+        },
+        {
+          type: 'category',
+          label: 'Consistency & Availability',
+          collapsed: true,
+          items: [
+            'fundamentals/distributed-systems/consistency-availability/eventual-consistency',
+            'fundamentals/distributed-systems/consistency-availability/strong-consistency',
+            'fundamentals/distributed-systems/consistency-availability/replication',
+            'fundamentals/distributed-systems/consistency-availability/partitioning',
+          ]
+        }
+      ]
+    }
     // {
     //   type: 'category',
     //   label: 'Java',
@@ -228,6 +249,7 @@ const sidebars = {
     //
     //   ],
     // }
+
   ],
 };
 
