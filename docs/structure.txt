@@ -1,54 +1,4 @@
 ```markdown
-fundamentos/
-├── algoritmos_estructuras/               # Nueva sección
-│   ├── estructuras_datos/
-│   │   ├── lineales/
-│   │   │   ├── arrays
-│   │   │   ├── linked_lists
-│   │   │   ├── stacks
-│   │   │   └── queues
-│   │   ├── arboles/
-│   │   │   ├── binary_trees
-│   │   │   ├── balanced_trees
-│   │   │   ├── b_trees
-│   │   │   └── red_black_trees
-│   │   ├── grafos/
-│   │   │   ├── directed
-│   │   │   ├── undirected
-│   │   │   ├── weighted
-│   │   │   └── algorithms
-│   │   └── avanzadas/
-│   │       ├── hash_tables
-│   │       ├── heaps
-│   │       ├── tries
-│   │       └── bloom_filters
-│   ├── algoritmos/
-│   │   ├── sorting/
-│   │   │   ├── comparison_based
-│   │   │   ├── non_comparison
-│   │   │   └── specialized
-│   │   ├── searching/
-│   │   │   ├── binary_search
-│   │   │   ├── tree_traversal
-│   │   │   └── graph_search
-│   │   ├── dynamic_programming/
-│   │   │   ├── memoization
-│   │   │   ├── tabulation
-│   │   │   └── common_patterns
-│   │   └── optimization/
-│   │       ├── greedy
-│   │       ├── backtracking
-│   │       └── branch_and_bound
-│   └── patrones_algoritmicos/
-│       ├── divide_and_conquer/
-│       │   ├── strategies
-│       │   └── applications
-│       ├── sliding_window/
-│       │   ├── fixed_size
-│       │   └── variable_size
-│       └── two_pointers/
-│           ├── same_direction
-│           └── opposite_direction
 ## 2. 💻 Expertise Técnico
 tech_expertise/
 ├── java/
@@ -344,5 +294,5 @@ import TabItem from '@theme/TabItem';
 
 - Pensar que esto es para un archivo .md para docusaurus
 - Puedes ocupar emojis en los titulos para temas que lo requieran
-Por favor, genera un documento técnico completo para LOAD BALANCING: HEALTH CHECKS siguiendo esta estructura que sea en ingles y en markdown.
+Por favor, genera un documento técnico completo para ALGORITHM PATTERNS: DIVIDE AND CONQUER siguiendo esta estructura que sea en ingles y en markdown.
 ```

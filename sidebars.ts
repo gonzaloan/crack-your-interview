@@ -8,6 +8,7 @@ const sidebars = {
     {
       type: 'category',
       label: 'Software Architecture',
+      collapsed: true,
       items: [
         {
           type: 'category',
@@ -155,6 +156,7 @@ const sidebars = {
     {
       type: 'category',
       label: 'Distributed Systems',
+      collapsed: true,
       items: [
         {
           type: 'doc',
@@ -201,6 +203,7 @@ const sidebars = {
     {
       type: 'category',
       label: 'Scalability',
+      collapsed: true,
       items: [
         {
           type: 'doc',
@@ -237,6 +240,144 @@ const sidebars = {
             'fundamentals/scalability/load-balancing/algorithms',
             'fundamentals/scalability/load-balancing/session-persistence',
             'fundamentals/scalability/load-balancing/health-checks',
+          ]
+        },
+      ]
+    },
+    {
+      type: 'category',
+      label: 'Data Structures & Algorithms',
+      collapsed: true,
+      items: [
+        {
+          type: 'category',
+          label: 'Data Structures',
+          collapsed: true,
+          items: [
+            {
+              type: 'doc',
+              label: 'Introduction',
+              id: 'fundamentals/data-structures-algorithms/data-structures/intro'
+            },
+            {
+              type: 'category',
+              label: 'Lineal',
+              collapsed: true,
+              items: [
+                'fundamentals/data-structures-algorithms/data-structures/lineal/arrays',
+                'fundamentals/data-structures-algorithms/data-structures/lineal/linked-lists',
+                'fundamentals/data-structures-algorithms/data-structures/lineal/stacks',
+                'fundamentals/data-structures-algorithms/data-structures/lineal/queues',
+              ]
+            },
+            {
+              type: 'category',
+              label: 'Trees',
+              collapsed: true,
+              items: [
+                'fundamentals/data-structures-algorithms/data-structures/trees/binary-trees',
+                'fundamentals/data-structures-algorithms/data-structures/trees/balanced-trees',
+                'fundamentals/data-structures-algorithms/data-structures/trees/b-trees',
+                'fundamentals/data-structures-algorithms/data-structures/trees/red-black-trees',
+              ]
+            },
+            {
+              type: 'category',
+              label: 'Graphs',
+              collapsed: true,
+              items: [
+                'fundamentals/data-structures-algorithms/data-structures/graphs/directed',
+                'fundamentals/data-structures-algorithms/data-structures/graphs/undirected',
+                'fundamentals/data-structures-algorithms/data-structures/graphs/weighted',
+                'fundamentals/data-structures-algorithms/data-structures/graphs/algorithms',
+              ]
+            },
+            {
+              type: 'category',
+              label: 'Advanced',
+              collapsed: true,
+              items: [
+                'fundamentals/data-structures-algorithms/data-structures/advanced/hash-tables',
+                'fundamentals/data-structures-algorithms/data-structures/advanced/heaps',
+                'fundamentals/data-structures-algorithms/data-structures/advanced/tries',
+                'fundamentals/data-structures-algorithms/data-structures/advanced/bloom-filters',
+              ]
+            },
+          ]
+        },
+        {
+          type: 'category',
+          label: 'Algorithms',
+          collapsed: true,
+          items: [
+            {
+              type: 'doc',
+              label: 'Introduction',
+              id: 'fundamentals/data-structures-algorithms/algorithms/intro'
+            },
+            {
+              type: 'category',
+              label: 'Sorting',
+              collapsed: true,
+              items: [
+                'fundamentals/data-structures-algorithms/algorithms/sorting/comparison-based',
+                'fundamentals/data-structures-algorithms/algorithms/sorting/non-comparison-based',
+                'fundamentals/data-structures-algorithms/algorithms/sorting/specialized',
+              ]
+            },
+            {
+              type: 'category',
+              label: 'Searching',
+              collapsed: true,
+              items: [
+                'fundamentals/data-structures-algorithms/algorithms/searching/binary-search',
+                'fundamentals/data-structures-algorithms/algorithms/searching/tree-traversal',
+                'fundamentals/data-structures-algorithms/algorithms/searching/graph-search',
+              ]
+            },
+            {
+              type: 'category',
+              label: 'Dynamic Programming',
+              collapsed: true,
+              items: [
+                'fundamentals/data-structures-algorithms/algorithms/dynamic-programming/memoization',
+                'fundamentals/data-structures-algorithms/algorithms/dynamic-programming/tabulation',
+                'fundamentals/data-structures-algorithms/algorithms/dynamic-programming/common-patterns',
+              ]
+            },
+            {
+              type: 'category',
+              label: 'Optimization',
+              collapsed: true,
+              items: [
+                'fundamentals/data-structures-algorithms/algorithms/optimization/greedy',
+                'fundamentals/data-structures-algorithms/algorithms/optimization/backtracking',
+                'fundamentals/data-structures-algorithms/algorithms/optimization/branch-and-bound',
+              ]
+            },
+          ]
+        },
+
+        {
+          type: 'category',
+          label: 'Algorithm Patterns',
+          collapsed: true,
+          items: [
+            {
+              type: 'doc',
+              label: 'Divide & Conquer',
+              id: 'fundamentals/data-structures-algorithms/algorithm-patterns/divide-and-conquer'
+            },
+            {
+              type: 'doc',
+              label: 'Sliding Window',
+              id: 'fundamentals/data-structures-algorithms/algorithm-patterns/sliding-window'
+            },
+            {
+              type: 'doc',
+              label: 'Two Pointers',
+              id: 'fundamentals/data-structures-algorithms/algorithm-patterns/two-pointers'
+            },
           ]
         },
       ]
