@@ -1,8 +1,0 @@
-{
-  "label": "Spring Testing",
-  "position": 5,
-  "link": {
-    "type": "generated-index",
-    "description": "Comprehensive testing strategies for Spring applications, including unit tests, integration tests, and test containers."
-  }
-}

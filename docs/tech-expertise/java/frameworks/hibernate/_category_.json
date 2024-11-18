@@ -1,0 +1,8 @@
+{
+  "label": "Hibernate",
+  "position": 1,
+  "link": {
+    "type": "generated-index",
+    "description": "Java Hibernate."
+  }
+}
