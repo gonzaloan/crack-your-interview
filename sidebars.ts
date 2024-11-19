@@ -473,84 +473,41 @@ const sidebars = {
               ]
             }
           ]
+        },
+        {
+          type: 'category',
+          label: 'Architecture',
+          collapsed: true,
+          items: [
+            {
+              type: 'category',
+              label: 'Principles & Patterns',
+              collapsed: true,
+              items: [
+                'tech-expertise/architecture/principles-patterns/architectural-principles',
+                'tech-expertise/architecture/principles-patterns/enterprise-patterns',
+                'tech-expertise/architecture/principles-patterns/anti-patterns',
+
+              ]
+            },
+            {
+              type: 'category',
+              label: 'Microservices Distributed',
+              collapsed: true,
+              items: [
+                'tech-expertise/architecture/microservices-distributed/microservices-fundamentals',
+                'tech-expertise/architecture/microservices-distributed/service-boundaries',
+                'tech-expertise/architecture/microservices-distributed/data-management',
+                'tech-expertise/architecture/microservices-distributed/service-discovery',
+                'tech-expertise/architecture/microservices-distributed/resilience-patterns',
+              ]
+            }
+          ]
+
         }
       ]
     }
-    // {
-    //   type: 'category',
-    //   label: 'Java',
-    //   items: [
-    //     {
-    //       type: 'category',
-    //       label: 'Basics',
-    //       collapsed: true,
-    //       items: [
-    //         'java/basics/intro',
-    //         'java/basics/key-concepts',
-    //         'java/basics/java-8-features',
-    //         'java/basics/api-collections',
-    //         'java/basics/exceptions',
-    //
-    //       ],
-    //     },
-    //     {
-    //       type: 'category',
-    //       label: 'OOP',
-    //       collapsed: true,
-    //       items: [
-    //         'java/oop/intro',
-    //         'java/oop/encapsulation',
-    //         'java/oop/inheritance',
-    //         'java/oop/polymorphism',
-    //         'java/oop/abstraction',
-    //       ],
-    //     },
-    //     {
-    //       type: 'category',
-    //       label: 'Functional Programming',
-    //       collapsed: true,
-    //       items: [
-    //         'java/functional/intro',
-    //         'java/functional/streams',
-    //         'java/functional/lambdas',
-    //         'java/functional/optional',
-    //       ],
-    //     },
-    //     {
-    //       type: 'category',
-    //       label: 'Advanced Features',
-    //       collapsed: true,
-    //       items: [
-    //         'java/advanced/intro',
-    //         'java/advanced/java-11-17-features',
-    //         'java/advanced/performance',
-    //         'java/advanced/memory-management',
-    //         'java/advanced/concurrency',
-    //       ],
-    //     },
-    //
-    //     {
-    //       type: 'category',
-    //       label: 'Frameworks',
-    //       items: [
-    //         {
-    //           type: 'category',
-    //           label: 'Spring',
-    //           items: [
-    //             {
-    //               type: 'category',
-    //               label: 'Core',
-    //               items: [
-    //                 'java/frameworks/spring/core/intro',
-    //               ],
-    //             },
-    //           ],
-    //         },
-    //       ]
-    //     }
-    //
-    //   ],
-    // }
+
 
   ],
 };

@@ -2,21 +2,6 @@
 ## 2. 💻 Expertise Técnico
 tech_expertise/
 ├── java/
-│   ├── core/
-│   │   ├── collections/
-│   │   │   ├── list_set_map
-│   │   │   ├── concurrent_collections
-│   │   │   └── streams
-│   │   ├── concurrencia/
-│   │   │   ├── threads
-│   │   │   ├── executors
-│   │   │   ├── completablefuture
-│   │   │   └── synchronization
-│   │   └── memoria_gc/
-│   │       ├── heap_stack
-│   │       ├── garbage_collectors
-│   │       ├── memory_leaks
-│   │       └── tuning
 │   ├── frameworks/
 │   │   ├── spring/
 │   │   │   ├── core
@@ -60,19 +45,175 @@ tech_expertise/
 │       ├── debugging
 │       ├── testing
 │       └── profiling
-└── bases_datos/
-├── sql/
-│   ├── optimization
-│   ├── indexing
-│   └── transactions
-├── nosql/
-│   ├── document_stores
-│   ├── key_value
-│   └── graph_databases
-└── newSQL/
-├── distributed_sql
-├── scalability
-└── consistency
+├── bases_datos/
+│   ├── sql/
+│   │   ├── _category_.json
+│   │   ├── fundamentals/
+│   │   │   ├── ddl-dml.md                    # Fundamentos DDL/DML, tipos de datos, constraints
+│   │   │   ├── joins-subqueries.md           # Tipos de JOINs, subqueries, CTEs
+│   │   │   └── functions-procedures.md        # Funciones agregadas, procedimientos almacenados
+│   │   ├── advanced/
+│   │   │   ├── optimization-design.md         # Optimización de queries, diseño de schemas
+│   │   │   ├── indexing-strategies.md         # Tipos de índices, estrategias de indexación
+│   │   │   └── performance-tuning.md          # Análisis de planes de ejecución, tuning
+│   │   └── plsql/
+│   │       ├── basics.md                      # Estructuras básicas, variables, cursores
+│   │       ├── advanced-concepts.md           # Packages, triggers, dynamic SQL
+│   │       └── best-practices.md              # Mejores prácticas, patrones comunes
+│   ├── nosql/
+│   │   ├── _category_.json
+│   │   ├── document_stores/
+│   │   │   ├── mongodb-fundamentals.md        # Conceptos básicos MongoDB
+│   │   │   ├── schema-design.md               # Diseño de schemas en NoSQL
+│   │   │   └── aggregation-pipeline.md        # Framework de agregación
+│   │   ├── key_value/
+│   │   │   ├── redis-fundamentals.md          # Conceptos básicos Redis
+│   │   │   ├── caching-strategies.md          # Estrategias de caché
+│   │   │   └── data-structures.md             # Estructuras de datos en Redis
+│   │   └── graph_databases/
+│   │       ├── neo4j-fundamentals.md          # Conceptos básicos Neo4j
+│   │       ├── graph-modeling.md              # Modelado de datos en grafos
+│   │       └── cypher-queries.md              # Consultas con Cypher
+│   └── newSQL/
+│       ├── _category_.json
+│       ├── distributed_sql/
+│       │   ├── architecture.md                # Arquitectura NewSQL
+│       │   └── implementations.md             # CockroachDB, TiDB, etc.
+│       ├── scalability/
+│       │   ├── horizontal-scaling.md          # Sharding, partitioning
+│       │   └── replication.md                 # Estrategias de replicación
+│       └── consistency/
+│           ├── acid-guarantees.md             # Garantías ACID en distributed SQL
+│           └── consensus-protocols.md          # Protocolos de consenso
+
+├── architecture/
+│   ├── _category_.json
+│   ├── microservices-distributed/
+│   │   ├── microservices-fundamentals.md     # Fundamentos de microservicios
+│   │   ├── service-boundaries.md             # Definición de límites
+│   │   ├── data-management.md                # Gestión de datos distribuidos
+│   │   ├── service-discovery.md              # Descubrimiento de servicios
+│   │   └── resilience-patterns.md            # Patrones de resiliencia
+│   ├── cloud-patterns/
+│   │   ├── cloud-native.md                   # Arquitecturas cloud-native
+│   │   ├── scalability.md                    # Patrones de escalabilidad
+│   │   ├── reliability.md                    # Patrones de confiabilidad
+│   │   └── security.md                       # Patrones de seguridad
+│   └── components-communication/
+│       ├── sync-patterns.md                  # Patrones síncronos
+│       ├── async-patterns.md                 # Patrones asíncronos
+│       └── integration-patterns.md           # Patrones de integración
+
+├── design/
+│   ├── _category_.json
+│   ├── principles/
+│   │   ├── solid.md                         # Principios SOLID detallados
+│   │   ├── grasp.md                         # Principios GRASP
+│   │   └── design-principles.md             # Otros principios de diseño
+│   ├── patterns/
+│   │   ├── creational.md                    # Patrones creacionales
+│   │   ├── structural.md                    # Patrones estructurales
+│   │   ├── behavioral.md                    # Patrones de comportamiento
+│   │   └── enterprise.md                    # Patrones empresariales
+│   └── ddd/
+│       ├── strategic-design.md              # Diseño estratégico
+│       ├── tactical-design.md               # Diseño táctico
+│       └── implementation.md                # Implementación práctica
+
+├── devops-security/
+│   ├── _category_.json
+│   ├── ci-cd/
+│   │   ├── pipeline-design.md               # Diseño de pipelines
+│   │   ├── automation.md                    # Automatización
+│   │   └── best-practices.md                # Mejores prácticas
+│   ├── security/
+│   │   ├── authentication.md                # Autenticación
+│   │   ├── authorization.md                 # Autorización
+│   │   ├── encryption.md                    # Encriptación
+│   │   └── security-patterns.md             # Patrones de seguridad
+│   ├── infrastructure/
+│   │   ├── iaac.md                         # Infrastructure as Code
+│   │   ├── containers.md                   # Contenedores y orquestación
+│   │   └── monitoring.md                   # Monitoreo y observabilidad
+│   └── cloud-services/
+│       ├── aws.md                          # AWS servicios principales
+│       ├── azure.md                        # Azure servicios principales
+│       └── gcp.md                          # GCP servicios principales
+
+├── functional-programming/
+│   ├── _category_.json
+│   ├── fundamentals/
+│   │   ├── pure-functions.md               # Funciones puras
+│   │   ├── immutability.md                # Inmutabilidad
+│   │   └── first-class-functions.md       # Funciones primera clase
+│   ├── advanced-concepts/
+│   │   ├── monads.md                      # Mónadas
+│   │   ├── functors.md                    # Functores
+│   │   └── composition.md                 # Composición funcional
+│   └── algorithms-recursion/
+│       ├── recursive-patterns.md          # Patrones recursivos
+│       ├── tail-recursion.md             # Recursión de cola
+│       └── practical-applications.md      # Aplicaciones prácticas
+
+├── data-structures-algorithms/
+│   ├── _category_.json
+│   ├── data-structures/
+│   │   ├── arrays-lists.md               # Arrays y listas
+│   │   ├── trees-graphs.md              # Árboles y grafos
+│   │   └── hash-tables.md               # Tablas hash
+│   ├── sorting-complexity/
+│   │   ├── basic-sorting.md             # Algoritmos básicos
+│   │   ├── advanced-sorting.md          # Algoritmos avanzados
+│   │   └── hybrid-algorithms.md         # Algoritmos híbridos
+│   └── complexity-analysis/
+│       ├── time-complexity.md           # Análisis de tiempo
+│       ├── space-complexity.md          # Análisis de espacio
+│       └── optimization.md              # Técnicas de optimización
+
+├── rest/
+│   ├── _category_.json
+│   └── fundamentals/
+│       ├── rest-principles.md           # Principios REST
+│       ├── api-design.md               # Diseño de APIs
+│       └── security-versioning.md      # Seguridad y versionado
+
+├── testing/
+│   ├── _category_.json
+│   ├── unit-tools/
+│   │   ├── unit-testing.md             # Testing unitario
+│   │   ├── mocking.md                  # Mocking y stubs
+│   │   └── test-doubles.md             # Test doubles
+│   ├── methods-strategies/
+│   │   ├── tdd.md                      # Test Driven Development
+│   │   ├── bdd.md                      # Behavior Driven Development
+│   │   └── testing-patterns.md         # Patrones de testing
+│   └── frameworks/
+│       ├── junit.md                    # JUnit
+│       ├── mockito.md                  # Mockito
+│       └── testing-tools.md            # Otras herramientas
+
+└── persistence/
+    ├── _category_.json
+    ├── fundamentals/
+    │   ├── orm-concepts.md             # Conceptos ORM
+    │   ├── jdbc-basics.md              # JDBC básico
+    │   └── dao-repository.md           # Patrones DAO y Repository
+    ├── queries-construction/
+    │   ├── jpql.md                     # JPQL
+    │   ├── criteria-api.md             # Criteria API
+    │   └── native-queries.md           # Queries nativas
+    ├── transactions-locking/
+    │   ├── transaction-management.md    # Gestión de transacciones
+    │   ├── isolation-levels.md         # Niveles de aislamiento
+    │   └── locking-strategies.md       # Estrategias de bloqueo
+    ├── annotations-relations/
+    │   ├── entity-mappings.md          # Mapeo de entidades
+    │   ├── relationships.md            # Relaciones
+    │   └── inheritance.md              # Herencia
+    └── caching-optimization/
+        ├── caching-strategies.md       # Estrategias de caché
+        ├── performance-tuning.md       # Optimización de rendimiento
+        └── best-practices.md           # Mejores prácticas
 
 ## 3. 🔐 Seguridad y DevOps
 infra_seguridad/
@@ -294,5 +435,409 @@ import TabItem from '@theme/TabItem';
 
 - Pensar que esto es para un archivo .md para docusaurus
 - Puedes ocupar emojis en los titulos para temas que lo requieran
-Por favor, genera un documento técnico completo para JAVA CORE MEMORY GC: TUNING siguiendo esta estructura que sea en ingles y en markdown.
+Por favor, genera un documento técnico completo para Microservices Distributed: SERVICE DISCOVERY siguiendo esta estructura que sea en ingles y en markdown.
 ```
+
+docs/
+├── intro.md
+fundamentos/
+├── sistemas_distribuidos/
+│   ├── consistencia_disponibilidad/
+│   │   ├── eventual_consistency
+│   │   ├── strong_consistency
+│   │   ├── replication
+│   │   └── partitioning
+│   ├── patrones_distribuidos/
+│   │   ├── circuit_breaker
+│   │   ├── bulkhead
+│   │   ├── retry
+│   │   ├── fallback
+│   │   └── saga
+│   └── teorema_cap/
+│       ├── consistency
+│       ├── availability
+│       └── partition_tolerance
+└── escalabilidad/
+├── horizontal_vertical/
+│   ├── scaling_strategies
+│   ├── capacity_planning
+│   └── performance_metrics
+├── caching_strategies/
+│   ├── cache_aside
+│   ├── read_through
+│   ├── write_through
+│   ├── write_behind
+│   └── cache_eviction
+└── load_balancing/
+├── algoritmos
+├── session_persistence
+└── health_checks
+
+## 2. 💻 Expertise Técnico
+tech_expertise/
+├── java/
+│   ├── _category_.json
+│   ├── fundamentals.md
+│   ├── oop.md
+│   ├── annotations.md
+│   ├── concurrency.md
+│   ├── lambdas.md
+│   ├── time-management.md
+│   ├── null-safety.md
+│   └── frameworks.md
+│   ├── core/
+│   │   ├── collections/
+│   │   │   ├── list_set_map
+│   │   │   ├── concurrent_collections
+│   │   │   └── streams
+│   │   ├── concurrencia/
+│   │   │   ├── threads
+│   │   │   ├── executors
+│   │   │   ├── completablefuture
+│   │   │   └── synchronization
+│   │   └── memoria_gc/
+│   │       ├── heap_stack
+│   │       ├── garbage_collectors
+│   │       ├── memory_leaks
+│   │       └── tuning
+│   ├── frameworks/
+│   │   ├── spring/
+│   │   │   ├── core
+│   │   │   ├── boot
+│   │   │   ├── security
+│   │   │   ├── cloud
+│   │   │   └── data
+│   │   └── hibernate/
+│   │       ├── mapping
+│   │       ├── caching
+│   │       ├── transactions
+│   │       └── performance
+│   └── optimizacion/
+│       ├── profiling
+│       ├── benchmarking
+│       └── tuning
+├── bases_datos/
+│   ├── sql/
+│   │   ├── _category_.json
+│   │   ├── fundamentals/
+│   │   │   ├── ddl-dml.md                    # Fundamentos DDL/DML, tipos de datos, constraints
+│   │   │   ├── joins-subqueries.md           # Tipos de JOINs, subqueries, CTEs
+│   │   │   └── functions-procedures.md        # Funciones agregadas, procedimientos almacenados
+│   │   ├── advanced/
+│   │   │   ├── optimization-design.md         # Optimización de queries, diseño de schemas
+│   │   │   ├── indexing-strategies.md         # Tipos de índices, estrategias de indexación
+│   │   │   └── performance-tuning.md          # Análisis de planes de ejecución, tuning
+│   │   └── plsql/
+│   │       ├── basics.md                      # Estructuras básicas, variables, cursores
+│   │       ├── advanced-concepts.md           # Packages, triggers, dynamic SQL
+│   │       └── best-practices.md              # Mejores prácticas, patrones comunes
+│   ├── nosql/
+│   │   ├── _category_.json
+│   │   ├── document_stores/
+│   │   │   ├── mongodb-fundamentals.md        # Conceptos básicos MongoDB
+│   │   │   ├── schema-design.md               # Diseño de schemas en NoSQL
+│   │   │   └── aggregation-pipeline.md        # Framework de agregación
+│   │   ├── key_value/
+│   │   │   ├── redis-fundamentals.md          # Conceptos básicos Redis
+│   │   │   ├── caching-strategies.md          # Estrategias de caché
+│   │   │   └── data-structures.md             # Estructuras de datos en Redis
+│   │   └── graph_databases/
+│   │       ├── neo4j-fundamentals.md          # Conceptos básicos Neo4j
+│   │       ├── graph-modeling.md              # Modelado de datos en grafos
+│   │       └── cypher-queries.md              # Consultas con Cypher
+│   └── newSQL/
+│       ├── _category_.json
+│       ├── distributed_sql/
+│       │   ├── architecture.md                # Arquitectura NewSQL
+│       │   └── implementations.md             # CockroachDB, TiDB, etc.
+│       ├── scalability/
+│       │   ├── horizontal-scaling.md          # Sharding, partitioning
+│       │   └── replication.md                 # Estrategias de replicación
+│       └── consistency/
+│           ├── acid-guarantees.md             # Garantías ACID en distributed SQL
+│           └── consensus-protocols.md          # Protocolos de consenso
+
+├── architecture/
+│   ├── _category_.json
+│   ├── principles-patterns/
+│   │   ├── architectural-principles.md        # SOLID, KISS, DRY, etc.
+│   │   ├── enterprise-patterns.md            # Patrones empresariales
+│   │   └── anti-patterns.md                  # Anti-patrones comunes
+│   ├── microservices-distributed/
+│   │   ├── microservices-fundamentals.md     # Fundamentos de microservicios
+│   │   ├── service-boundaries.md             # Definición de límites
+│   │   ├── data-management.md                # Gestión de datos distribuidos
+│   │   ├── service-discovery.md              # Descubrimiento de servicios
+│   │   └── resilience-patterns.md            # Patrones de resiliencia
+│   ├── cloud-patterns/
+│   │   ├── cloud-native.md                   # Arquitecturas cloud-native
+│   │   ├── scalability.md                    # Patrones de escalabilidad
+│   │   ├── reliability.md                    # Patrones de confiabilidad
+│   │   └── security.md                       # Patrones de seguridad
+│   └── components-communication/
+│       ├── sync-patterns.md                  # Patrones síncronos
+│       ├── async-patterns.md                 # Patrones asíncronos
+│       └── integration-patterns.md           # Patrones de integración
+
+├── design/
+│   ├── _category_.json
+│   ├── principles/
+│   │   ├── solid.md                         # Principios SOLID detallados
+│   │   ├── grasp.md                         # Principios GRASP
+│   │   └── design-principles.md             # Otros principios de diseño
+│   ├── patterns/
+│   │   ├── creational.md                    # Patrones creacionales
+│   │   ├── structural.md                    # Patrones estructurales
+│   │   ├── behavioral.md                    # Patrones de comportamiento
+│   │   └── enterprise.md                    # Patrones empresariales
+│   └── ddd/
+│       ├── strategic-design.md              # Diseño estratégico
+│       ├── tactical-design.md               # Diseño táctico
+│       └── implementation.md                # Implementación práctica
+
+├── devops-security/
+│   ├── _category_.json
+│   ├── ci-cd/
+│   │   ├── pipeline-design.md               # Diseño de pipelines
+│   │   ├── automation.md                    # Automatización
+│   │   └── best-practices.md                # Mejores prácticas
+│   ├── security/
+│   │   ├── authentication.md                # Autenticación
+│   │   ├── authorization.md                 # Autorización
+│   │   ├── encryption.md                    # Encriptación
+│   │   └── security-patterns.md             # Patrones de seguridad
+│   ├── infrastructure/
+│   │   ├── iaac.md                         # Infrastructure as Code
+│   │   ├── containers.md                   # Contenedores y orquestación
+│   │   └── monitoring.md                   # Monitoreo y observabilidad
+│   └── cloud-services/
+│       ├── aws.md                          # AWS servicios principales
+│       ├── azure.md                        # Azure servicios principales
+│       └── gcp.md                          # GCP servicios principales
+
+├── functional-programming/
+│   ├── _category_.json
+│   ├── fundamentals/
+│   │   ├── pure-functions.md               # Funciones puras
+│   │   ├── immutability.md                # Inmutabilidad
+│   │   └── first-class-functions.md       # Funciones primera clase
+│   ├── advanced-concepts/
+│   │   ├── monads.md                      # Mónadas
+│   │   ├── functors.md                    # Functores
+│   │   └── composition.md                 # Composición funcional
+│   └── algorithms-recursion/
+│       ├── recursive-patterns.md          # Patrones recursivos
+│       ├── tail-recursion.md             # Recursión de cola
+│       └── practical-applications.md      # Aplicaciones prácticas
+
+├── data-structures-algorithms/
+│   ├── _category_.json
+│   ├── data-structures/
+│   │   ├── arrays-lists.md               # Arrays y listas
+│   │   ├── trees-graphs.md              # Árboles y grafos
+│   │   └── hash-tables.md               # Tablas hash
+│   ├── sorting-complexity/
+│   │   ├── basic-sorting.md             # Algoritmos básicos
+│   │   ├── advanced-sorting.md          # Algoritmos avanzados
+│   │   └── hybrid-algorithms.md         # Algoritmos híbridos
+│   └── complexity-analysis/
+│       ├── time-complexity.md           # Análisis de tiempo
+│       ├── space-complexity.md          # Análisis de espacio
+│       └── optimization.md              # Técnicas de optimización
+
+├── rest/
+│   ├── _category_.json
+│   └── fundamentals/
+│       ├── rest-principles.md           # Principios REST
+│       ├── api-design.md               # Diseño de APIs
+│       └── security-versioning.md      # Seguridad y versionado
+
+├── testing/
+│   ├── _category_.json
+│   ├── unit-tools/
+│   │   ├── unit-testing.md             # Testing unitario
+│   │   ├── mocking.md                  # Mocking y stubs
+│   │   └── test-doubles.md             # Test doubles
+│   ├── methods-strategies/
+│   │   ├── tdd.md                      # Test Driven Development
+│   │   ├── bdd.md                      # Behavior Driven Development
+│   │   └── testing-patterns.md         # Patrones de testing
+│   └── frameworks/
+│       ├── junit.md                    # JUnit
+│       ├── mockito.md                  # Mockito
+│       └── testing-tools.md            # Otras herramientas
+
+└── persistence/
+    ├── _category_.json
+    ├── fundamentals/
+    │   ├── orm-concepts.md             # Conceptos ORM
+    │   ├── jdbc-basics.md              # JDBC básico
+    │   └── dao-repository.md           # Patrones DAO y Repository
+    ├── queries-construction/
+    │   ├── jpql.md                     # JPQL
+    │   ├── criteria-api.md             # Criteria API
+    │   └── native-queries.md           # Queries nativas
+    ├── transactions-locking/
+    │   ├── transaction-management.md    # Gestión de transacciones
+    │   ├── isolation-levels.md         # Niveles de aislamiento
+    │   └── locking-strategies.md       # Estrategias de bloqueo
+    ├── annotations-relations/
+    │   ├── entity-mappings.md          # Mapeo de entidades
+    │   ├── relationships.md            # Relaciones
+    │   └── inheritance.md              # Herencia
+    └── caching-optimization/
+        ├── caching-strategies.md       # Estrategias de caché
+        ├── performance-tuning.md       # Optimización de rendimiento
+        └── best-practices.md           # Mejores prácticas
+
+## 3. 🔐 Seguridad y DevOps
+infra_seguridad/
+├── cloud/
+│   ├── aws/
+│   │   ├── ec2_ecs
+│   │   ├── lambda
+│   │   ├── s3
+│   │   └── rds
+│   ├── gcp/
+│   │   ├── compute_engine
+│   │   ├── cloud_functions
+│   │   └── cloud_storage
+│   └── azure/
+│       ├── virtual_machines
+│       ├── functions
+│       └── blob_storage
+├── contenedores/
+│   ├── docker/
+│   │   ├── networking
+│   │   ├── volumes
+│   │   └── compose
+│   └── kubernetes/
+│       ├── pods_deployments
+│       ├── services
+│       ├── ingress
+│       └── storage
+├── ci_cd/
+│   ├── jenkins/
+│   │   ├── pipelines
+│   │   ├── agents
+│   │   └── security
+│   └── github_actions/
+│       ├── workflows
+│       ├── actions
+│       └── secrets
+└── security/
+├── oauth_jwt/
+│   ├── flows
+│   ├── tokens
+│   └── claims
+├── pentesting/
+│   ├── vulnerability_scanning
+│   ├── security_testing
+│   └── remediation
+└── secure_coding/
+├── input_validation
+├── encryption
+└── access_control
+
+## 4. 📊 Sistemas y Datos
+sistemas_datos/
+├── big_data/
+│   ├── procesamiento/
+│   │   ├── batch
+│   │   ├── stream
+│   │   └── realtime
+│   └── almacenamiento/
+│       ├── data_lakes
+│       ├── data_warehouses
+│       └── distributed_storage
+├── streaming/
+│   ├── kafka/
+│   │   ├── producers
+│   │   ├── consumers
+│   │   └── streams
+│   └── rabbitmq/
+│       ├── exchanges
+│       ├── queues
+│       └── routing
+└── monitoring/
+├── logs/
+│   ├── aggregation
+│   ├── analysis
+│   └── alerting
+├── metrics/
+│   ├── collection
+│   ├── visualization
+│   └── alerting
+└── tracing/
+├── distributed_tracing
+├── span_collection
+└── analysis
+
+## 5. 🎯 Liderazgo Técnico
+liderazgo/
+├── arquitectura/
+│   ├── enterprise_patterns/
+│   │   ├── microservices
+│   │   ├── event_driven
+│   │   └── domain_driven
+│   ├── decisiones_arquitectonicas/
+│   │   ├── trade_offs
+│   │   ├── requirements
+│   │   └── constraints
+│   └── documentation/
+│       ├── adr
+│       ├── diagrams
+│       └── specifications
+├── mentoria/
+│   ├── code_reviews/
+│   │   ├── best_practices
+│   │   ├── feedback
+│   │   └── standards
+│   └── technical_guidance/
+│       ├── best_practices
+│       ├── standards
+│       └── patterns
+└── gestion/
+├── estimaciones/
+│   ├── techniques
+│   ├── risk_assessment
+│   └── planning
+├── roadmap_tecnico/
+│   ├── vision
+│   ├── milestones
+│   └── dependencies
+└── tech_strategy/
+├── innovation
+├── modernization
+└── technical_debt
+
+## 6. 🌟 Soft Skills
+soft_skills/
+├── comunicacion/
+│   ├── presentaciones_tecnicas/
+│   │   ├── ejecutivas
+│   │   ├── tecnicas
+│   │   └── stakeholders
+│   └── documentacion/
+│       ├── tecnica
+│       ├── arquitectura
+│       └── procesos
+├── liderazgo/
+│   ├── management_influencia/
+│   │   ├── delegation
+│   │   ├── motivation
+│   │   └── conflict_resolution
+│   └── coaching/
+│       ├── mentoring
+│       ├── feedback
+│       └── growth
+└── negocio/
+├── impacto_negocio/
+│   ├── cost_analysis
+│   ├── risk_assessment
+│   └── value_proposition
+└── strategy_alignment/
+├── business_goals
+├── tech_strategy
+└── roadmap_alignment
+
