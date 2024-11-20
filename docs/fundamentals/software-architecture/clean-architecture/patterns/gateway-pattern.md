@@ -3,446 +3,476 @@ sidebar_position: 3
 title: "Gateway Pattern"
 description: "Clean Architecture Layers - Gateway Pattern"
 ---
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-
 # 🔄 Gateway Pattern in Clean Architecture
 
-## Overview
+## 1. Overview and Purpose
 
-The Gateway Pattern is an architectural pattern that encapsulates access to external services or resources in Clean Architecture. It acts as a translator between your application's domain and external systems, providing a clean interface while hiding implementation details.
+### Definition
+The Gateway Pattern provides a simplified interface to complex external systems, encapsulating the implementation details of external service communication while maintaining clean architecture principles.
 
-### Real World Analogy
-Think of a universal travel adapter. When traveling internationally, you don't need to know the specific details of each country's electrical system. The adapter (Gateway) handles the conversion between your device and the local power supply, providing a consistent interface regardless of the underlying infrastructure.
+### Problems Solved
+- External service coupling
+- Complex integration logic
+- Protocol dependencies
+- Testing difficulties
+- Configuration management
+- Error handling standardization
 
-## 🎯 Key Concepts
+### Business Value
+- Simplified integration
+- Enhanced maintainability
+- Improved testability
+- Better error handling
+- Easier service migration
+- Consistent interfaces
 
-### Architecture Overview
+## 2. 🏗️ Gateway Pattern Structure
 
 ```mermaid
 graph TD
-    A[Use Case] --> B[Gateway Interface]
+    A[Domain Service] --> B[Gateway Interface]
     B --> C[Gateway Implementation]
     C --> D[External Service]
-    C --> E[External API]
-    C --> F[Third-party System]
-    style B fill:#bbf,stroke:#333
-    style C fill:#dfd,stroke:#333
+    
+    E[Test Double] --> B
+    
+    style A fill:#f5d6a8,stroke:#333,stroke-width:2px
+    style B fill:#a8d1f5,stroke:#333,stroke-width:2px
+    style C fill:#b8f5a8,stroke:#333,stroke-width:2px
+    style D fill:#f5a8e8,stroke:#333,stroke-width:2px
+    style E fill:#f5d6a8,stroke:#333,stroke-width:2px
 ```
 
-### Components
-
-1. **Gateway Interface**
-    - Defines contract for external communication
-    - Lives in domain/application layer
-    - Technology-agnostic
-
-2. **Gateway Implementation**
-    - Implements the interface
-    - Lives in infrastructure layer
-    - Handles specific protocols/formats
-
-3. **Request/Response Models**
-    - Domain-specific models
-    - Translation logic
-    - Error handling
-
-## 💻 Implementation
+## 3. 💻 Implementation Examples
 
 ### Payment Gateway Example
 
-<Tabs>
-  <TabItem value="java" label="Java">
 ```java
-// Gateway Interface
-package com.example.domain.gateway;
-
+// Domain Layer - Gateway Interface
 public interface PaymentGateway {
-PaymentResult processPayment(PaymentRequest request);
-PaymentStatus checkStatus(String paymentId);
-void refundPayment(String paymentId, Money amount);
+    PaymentResult processPayment(Payment payment);
+    PaymentStatus checkStatus(PaymentId paymentId);
+    PaymentRefund refundPayment(PaymentId paymentId, Money amount);
 }
 
-// Domain Models
-package com.example.domain.model;
+// Domain Layer - Value Objects
+public record Payment(
+    PaymentId id,
+    Money amount,
+    Currency currency,
+    PaymentMethod method,
+    CustomerInfo customer
+) {}
 
-@Value
-public class PaymentRequest {
-private final String orderId;
-private final Money amount;
-private final Currency currency;
-private final PaymentMethod method;
-private final CustomerInfo customer;
-}
+public record PaymentResult(
+    PaymentId id,
+    PaymentStatus status,
+    String transactionId,
+    Instant processedAt
+) {}
 
-@Value
-public class PaymentResult {
-private final String paymentId;
-private final PaymentStatus status;
-private final String transactionReference;
-private final LocalDateTime timestamp;
-}
-
-// Gateway Implementation for Stripe
-package com.example.infrastructure.gateway;
-
-@Component
+// Infrastructure Layer - Stripe Implementation
 public class StripePaymentGateway implements PaymentGateway {
-private final Stripe stripeClient;
-private final PaymentMapper mapper;
-private final MetricsService metrics;
-
-    public StripePaymentGateway(Stripe stripeClient, 
-                               PaymentMapper mapper,
-                               MetricsService metrics) {
-        this.stripeClient = stripeClient;
-        this.mapper = mapper;
-        this.metrics = metrics;
-    }
+    private final StripeClient stripeClient;
+    private final PaymentMapper mapper;
     
     @Override
-    public PaymentResult processPayment(PaymentRequest request) {
+    public PaymentResult processPayment(Payment payment) {
         try {
-            metrics.startTimer("stripe.payment");
+            StripePaymentIntent intent = stripeClient.paymentIntents().create(
+                PaymentIntentCreateParams.builder()
+                    .setAmount(payment.amount().longValue())
+                    .setCurrency(payment.currency().getCode())
+                    .setPaymentMethod(mapPaymentMethod(payment.method()))
+                    .setCustomer(payment.customer().id())
+                    .build()
+            );
             
-            StripePaymentIntent intent = mapper.toStripeIntent(request);
-            StripePaymentResult result = stripeClient.createPayment(intent);
-            
-            return mapper.toDomain(result);
+            return mapper.toPaymentResult(intent);
         } catch (StripeException e) {
-            throw new PaymentGatewayException("Payment processing failed", e);
-        } finally {
-            metrics.stopTimer("stripe.payment");
+            throw new PaymentProcessingException("Failed to process payment", e);
         }
     }
     
     @Override
-    public PaymentStatus checkStatus(String paymentId) {
+    public PaymentStatus checkStatus(PaymentId paymentId) {
         try {
-            StripePayment payment = stripeClient.getPayment(paymentId);
-            return mapper.toPaymentStatus(payment.getStatus());
+            StripePaymentIntent intent = stripeClient.paymentIntents()
+                .retrieve(paymentId.toString());
+            return mapper.toPaymentStatus(intent.getStatus());
         } catch (StripeException e) {
-            throw new PaymentGatewayException("Status check failed", e);
+            throw new PaymentStatusCheckException("Failed to check payment status", e);
         }
     }
 }
 
-// Gateway Factory
-package com.example.infrastructure.gateway;
-
-@Component
-public class PaymentGatewayFactory {
-private final Map<String, PaymentGateway> gateways;
-
-    public PaymentGatewayFactory(List<PaymentGateway> availableGateways) {
-        this.gateways = availableGateways.stream()
-            .collect(Collectors.toMap(
-                PaymentGateway::getProvider,
-                gateway -> gateway
-            ));
-    }
+// Use Case Layer
+public class ProcessPaymentUseCase {
+    private final PaymentGateway paymentGateway;
+    private final PaymentRepository paymentRepository;
     
-    public PaymentGateway getGateway(String provider) {
-        return Optional.ofNullable(gateways.get(provider))
-            .orElseThrow(() -> new GatewayNotFoundException(provider));
+    public PaymentResult execute(ProcessPaymentCommand command) {
+        Payment payment = createPayment(command);
+        PaymentResult result = paymentGateway.processPayment(payment);
+        
+        paymentRepository.save(payment.withResult(result));
+        return result;
     }
 }
 ```
-  </TabItem>
-  <TabItem value="go" label="Go">
-```go
-// Gateway Interface
-package gateway
 
-type PaymentGateway interface {
-    ProcessPayment(request *PaymentRequest) (*PaymentResult, error)
-    CheckStatus(paymentID string) (PaymentStatus, error)
-    RefundPayment(paymentID string, amount Money) error
-}
+### Email Gateway Example
 
-// Domain Models
-package domain
-
-type PaymentRequest struct {
-    OrderID  string
-    Amount   Money
-    Currency Currency
-    Method   PaymentMethod
-    Customer CustomerInfo
-}
-
-type PaymentResult struct {
-    PaymentID           string
-    Status             PaymentStatus
-    TransactionReference string
-    Timestamp          time.Time
-}
-
-// Gateway Implementation
-package infrastructure
-
-type StripePaymentGateway struct {
-    client  *stripe.Client
-    mapper  PaymentMapper
-    metrics MetricsService
-}
-
-func NewStripePaymentGateway(client *stripe.Client, 
-                           mapper PaymentMapper,
-                           metrics MetricsService) PaymentGateway {
-    return &StripePaymentGateway{
-        client:  client,
-        mapper:  mapper,
-        metrics: metrics,
-    }
-}
-
-func (g *StripePaymentGateway) ProcessPayment(
-    request *PaymentRequest) (*PaymentResult, error) {
-    
-    timer := g.metrics.StartTimer("stripe.payment")
-    defer timer.Stop()
-    
-    intent, err := g.mapper.ToStripeIntent(request)
-    if err != nil {
-        return nil, fmt.Errorf("mapping error: %w", err)
-    }
-    
-    result, err := g.client.CreatePayment(intent)
-    if err != nil {
-        return nil, fmt.Errorf("stripe error: %w", err)
-    }
-    
-    return g.mapper.ToDomain(result)
-}
-
-func (g *StripePaymentGateway) CheckStatus(
-    paymentID string) (PaymentStatus, error) {
-    
-    payment, err := g.client.GetPayment(paymentID)
-    if err != nil {
-        return "", fmt.Errorf("stripe error: %w", err)
-    }
-    
-    return g.mapper.ToPaymentStatus(payment.Status), nil
-}
-
-// Gateway Factory
-package infrastructure
-
-type PaymentGatewayFactory struct {
-    gateways map[string]PaymentGateway
-}
-
-func NewPaymentGatewayFactory(
-    availableGateways []PaymentGateway) *PaymentGatewayFactory {
-    
-    gateways := make(map[string]PaymentGateway)
-    for _, g := range availableGateways {
-        gateways[g.Provider()] = g
-    }
-    
-    return &PaymentGatewayFactory{gateways: gateways}
-}
-
-func (f *PaymentGatewayFactory) GetGateway(
-    provider string) (PaymentGateway, error) {
-    
-    if gateway, exists := f.gateways[provider]; exists {
-        return gateway, nil
-    }
-    return nil, fmt.Errorf("gateway not found: %s", provider)
-}
-```
-  </TabItem>
-</Tabs>
-
-## 🔄 Related Patterns
-
-1. **Adapter Pattern**
-    - Similar purpose for interface adaptation
-    - Often used within Gateway implementation
-    - More focused on interface conversion
-
-2. **Factory Pattern**
-    - Creates appropriate Gateway instances
-    - Handles configuration and dependencies
-    - Provides flexibility in implementation choice
-
-3. **Strategy Pattern**
-    - Allows switching between different Gateway implementations
-    - Supports runtime Gateway selection
-    - Maintains consistent interface
-
-## ✅ Best Practices
-
-### Configuration
-1. Use dependency injection for Gateway dependencies
-2. Externalize configuration (URLs, credentials)
-3. Implement proper retry policies
-4. Use circuit breakers for external calls
-
-### Monitoring
-1. Track gateway performance metrics
-2. Log all external interactions
-3. Monitor error rates
-4. Implement health checks
-
-### Testing
-1. Create test doubles for external services
-2. Test error scenarios comprehensively
-3. Implement integration tests
-4. Use contract tests
-
-## ⚠️ Common Pitfalls
-
-1. **Leaking External Details**
-    - Symptom: External system specifics in domain
-    - Solution: Proper abstraction and mapping
-
-2. **Missing Error Handling**
-    - Symptom: Uncaught external exceptions
-    - Solution: Comprehensive error mapping
-
-3. **Tight Coupling**
-    - Symptom: Direct dependency on external systems
-    - Solution: Use proper abstractions and interfaces
-
-4. **Complex Gateway Logic**
-    - Symptom: Business logic in gateways
-    - Solution: Keep gateways focused on communication
-
-## 🎯 Use Cases
-
-### 1. Payment Processing System
-```mermaid
-graph LR
-    A[Order Service] --> B[Payment Gateway]
-    B --> C[Stripe]
-    B --> D[PayPal]
-    B --> E[Local Payment]
-```
-
-### 2. Email Service Integration
-- Multiple provider support
-- Template rendering
-- Delivery tracking
-
-### 3. External API Integration
-- Rate limiting
-- Authentication handling
-- Response caching
-
-## 🔍 Deep Dive Topics
-
-### Thread Safety
-
-1. **Connection Management**
 ```java
-public class ThreadSafeGateway {
-    private final ClientPool clientPool;
+// Domain Layer - Gateway Interface
+public interface EmailGateway {
+    void sendEmail(Email email);
+    List<EmailStatus> checkBulkStatus(List<EmailId> emailIds);
+    EmailTemplate getTemplate(TemplateId templateId);
+}
+
+// Domain Layer - Email Value Object
+public record Email(
+    EmailId id,
+    EmailAddress from,
+    List<EmailAddress> to,
+    List<EmailAddress> cc,
+    String subject,
+    EmailContent content,
+    List<Attachment> attachments
+) {
+    public static Email createTransactional(
+        EmailAddress to, 
+        String subject, 
+        EmailContent content
+    ) {
+        return new Email(
+            EmailId.generate(),
+            EmailAddress.getDefaultFrom(),
+            List.of(to),
+            List.of(),
+            subject,
+            content,
+            List.of()
+        );
+    }
+}
+
+// Infrastructure Layer - AWS SES Implementation
+public class SESEmailGateway implements EmailGateway {
+    private final AmazonSimpleEmailService sesClient;
+    private final EmailMapper mapper;
     
-    public Response execute(Request request) {
-        try (Client client = clientPool.acquire()) {
-            return client.execute(request);
+    @Override
+    public void sendEmail(Email email) {
+        try {
+            SendEmailRequest request = mapper.toSESRequest(email);
+            SendEmailResult result = sesClient.sendEmail(request);
+            
+            if (!result.getMessageId().isPresent()) {
+                throw new EmailSendException("Failed to send email");
+            }
+        } catch (AmazonSESException e) {
+            throw new EmailSendException("Failed to send email via SES", e);
         }
     }
-}
-```
-
-2. **Caching Considerations**
-```java
-public class CachingGateway implements ServiceGateway {
-    private final Cache<String, Response> cache;
-    private final ServiceGateway delegate;
     
-    public Response execute(Request request) {
-        String key = request.cacheKey();
-        return cache.get(key, () -> delegate.execute(request));
+    @Override
+    public List<EmailStatus> checkBulkStatus(List<EmailId> emailIds) {
+        return emailIds.stream()
+            .map(this::getEmailStatus)
+            .collect(Collectors.toList());
     }
 }
 ```
 
-### Distributed Systems
+### Third-Party API Gateway Example
 
-1. **Circuit Breaker**
 ```java
-public class ResilientGateway implements ServiceGateway {
+// Domain Layer - Gateway Interface
+public interface WeatherGateway {
+    WeatherInfo getCurrentWeather(Location location);
+    WeatherForecast getForecast(Location location, int days);
+    List<WeatherAlert> getAlerts(Location location);
+}
+
+// Infrastructure Layer - OpenWeather Implementation
+public class OpenWeatherGateway implements WeatherGateway {
+    private final OpenWeatherClient client;
+    private final WeatherMapper mapper;
+    private final Cache cache;
+    
+    @Override
+    public WeatherInfo getCurrentWeather(Location location) {
+        String cacheKey = buildCacheKey("current", location);
+        return cache.get(cacheKey, () -> {
+            OpenWeatherResponse response = client.getCurrentWeather(
+                location.latitude(),
+                location.longitude()
+            );
+            return mapper.toWeatherInfo(response);
+        });
+    }
+    
+    @Override
+    public WeatherForecast getForecast(Location location, int days) {
+        validateDaysRange(days);
+        
+        String cacheKey = buildCacheKey("forecast", location, days);
+        return cache.get(cacheKey, () -> {
+            OpenWeatherForecastResponse response = client.getForecast(
+                location.latitude(),
+                location.longitude(),
+                days
+            );
+            return mapper.toWeatherForecast(response);
+        });
+    }
+}
+
+// Use Case Layer
+public class GetWeatherForecastUseCase {
+    private final WeatherGateway weatherGateway;
+    private final LocationService locationService;
+    
+    public WeatherForecast execute(GetForecastRequest request) {
+        Location location = locationService.getLocation(request.getLocationId());
+        return weatherGateway.getForecast(location, request.getDays());
+    }
+}
+```
+
+## 4. 🛡️ Error Handling
+
+### Standardized Error Handling
+
+```java
+// Domain Layer - Custom Exceptions
+public class GatewayException extends RuntimeException {
+    private final ErrorCode errorCode;
+    
+    public GatewayException(String message, ErrorCode errorCode) {
+        super(message);
+        this.errorCode = errorCode;
+    }
+}
+
+public enum ErrorCode {
+    NETWORK_ERROR,
+    AUTHENTICATION_FAILED,
+    SERVICE_UNAVAILABLE,
+    INVALID_REQUEST,
+    RATE_LIMIT_EXCEEDED
+}
+
+// Infrastructure Layer - Error Handling
+public class ResilientGateway<T> {
+    private final T gateway;
     private final CircuitBreaker circuitBreaker;
-    private final ServiceGateway delegate;
-    
-    public Response execute(Request request) {
-        return circuitBreaker.execute(() -> 
-            delegate.execute(request)
-        );
-    }
-}
-```
-
-2. **Retry Handling**
-```java
-public class RetryingGateway implements ServiceGateway {
     private final RetryPolicy retryPolicy;
-    private final ServiceGateway delegate;
     
-    public Response execute(Request request) {
-        return retryPolicy.execute(() -> 
-            delegate.execute(request)
+    public <R> R execute(GatewayOperation<T, R> operation) {
+        return circuitBreaker.execute(() -> 
+            retryPolicy.execute(() -> {
+                try {
+                    return operation.execute(gateway);
+                } catch (Exception e) {
+                    throw translateException(e);
+                }
+            })
+        );
+    }
+    
+    private GatewayException translateException(Exception e) {
+        if (e instanceof ConnectException) {
+            return new GatewayException(
+                "Service unavailable", 
+                ErrorCode.SERVICE_UNAVAILABLE
+            );
+        }
+        // Handle other exceptions...
+        return new GatewayException(
+            "Unknown error", 
+            ErrorCode.NETWORK_ERROR
         );
     }
 }
 ```
 
-### Performance
+## 5. 🧪 Testing Strategies
 
-1. **Batch Operations**
-```java
-public interface BatchGateway {
-    List<Response> executeBatch(List<Request> requests);
-}
-```
+### Gateway Test Doubles
 
-2. **Response Caching**
 ```java
-public class CacheableGateway implements ServiceGateway {
-    private final LoadingCache<String, Response> cache;
+// Test Double Implementation
+public class TestPaymentGateway implements PaymentGateway {
+    private final Map<PaymentId, PaymentResult> payments = new HashMap<>();
     
-    public Response execute(Request request) {
-        return cache.get(request.cacheKey());
+    @Override
+    public PaymentResult processPayment(Payment payment) {
+        PaymentResult result = new PaymentResult(
+            payment.id(),
+            PaymentStatus.COMPLETED,
+            "test-transaction-" + payment.id(),
+            Instant.now()
+        );
+        payments.put(payment.id(), result);
+        return result;
+    }
+    
+    @Override
+    public PaymentStatus checkStatus(PaymentId paymentId) {
+        return payments.get(paymentId).status();
+    }
+}
+
+// Integration Test
+public class StripePaymentGatewayIntegrationTest {
+    private PaymentGateway gateway;
+    
+    @Test
+    void shouldProcessPayment() {
+        // Arrange
+        Payment payment = createTestPayment();
+        
+        // Act
+        PaymentResult result = gateway.processPayment(payment);
+        
+        // Assert
+        assertNotNull(result.transactionId());
+        assertEquals(PaymentStatus.COMPLETED, result.status());
+    }
+}
+
+// Use Case Test
+public class ProcessPaymentUseCaseTest {
+    @Mock private PaymentGateway paymentGateway;
+    
+    @Test
+    void shouldProcessPaymentSuccessfully() {
+        // Arrange
+        ProcessPaymentCommand command = createTestCommand();
+        when(paymentGateway.processPayment(any()))
+            .thenReturn(createSuccessResult());
+        
+        // Act
+        PaymentResult result = useCase.execute(command);
+        
+        // Assert
+        verify(paymentGateway).processPayment(any());
+        assertEquals(PaymentStatus.COMPLETED, result.status());
     }
 }
 ```
 
-## 📚 Additional Resources
+## 6. 🎯 Best Practices
+
+### Gateway Design Guidelines
+
+1. **Keep Gateway Interfaces Clean**
+```java
+// Good: Clean interface
+public interface UserProfileGateway {
+    UserProfile getProfile(UserId userId);
+    void updateProfile(UserProfile profile);
+}
+
+// Bad: Leaking implementation details
+public interface UserProfileGateway {
+    RestResponse<UserProfileDTO> getProfile(String userId);
+    void updateProfile(UserProfileDTO profile, Headers headers);
+}
+```
+
+2. **Use Mappers for Data Transformation**
+```java
+public class PaymentMapper {
+    public StripePaymentIntent toStripeIntent(Payment payment) {
+        return PaymentIntent.builder()
+            .setAmount(payment.amount().longValue())
+            .setCurrency(payment.currency().getCode())
+            .setPaymentMethod(payment.method().toString())
+            .build();
+    }
+    
+    public PaymentResult fromStripeIntent(StripePaymentIntent intent) {
+        return new PaymentResult(
+            PaymentId.from(intent.getId()),
+            mapStatus(intent.getStatus()),
+            intent.getId(),
+            Instant.ofEpochSecond(intent.getCreated())
+        );
+    }
+}
+```
+
+3. **Implement Resilience Patterns**
+```java
+public class ResilientEmailGateway implements EmailGateway {
+    private final EmailGateway delegate;
+    private final CircuitBreaker circuitBreaker;
+    private final RetryPolicy retryPolicy;
+    
+    @Override
+    public void sendEmail(Email email) {
+        circuitBreaker.execute(() -> 
+            retryPolicy.execute(() -> 
+                delegate.sendEmail(email)
+            )
+        );
+    }
+}
+```
+
+## 7. 🚫 Anti-patterns
+
+### Common Mistakes to Avoid
+
+1. **Leaking Implementation Details**
+```java
+// Wrong: Exposing HTTP concepts
+public interface ApiGateway {
+    HttpResponse get(String url, Map<String, String> headers);
+}
+
+// Better: Domain-focused interface
+public interface ProductGateway {
+    Product getProduct(ProductId id);
+    List<Product> searchProducts(SearchCriteria criteria);
+}
+```
+
+2. **Missing Error Translation**
+```java
+// Wrong: Propagating third-party exceptions
+public class PayPalGateway implements PaymentGateway {
+    public PaymentResult processPayment(Payment payment) {
+        return paypalClient.processPayment(payment); // Leaks PayPal exceptions
+    }
+}
+
+// Better: Translating to domain exceptions
+public class PayPalGateway implements PaymentGateway {
+    public PaymentResult processPayment(Payment payment) {
+        try {
+            return paypalClient.processPayment(payment);
+        } catch (PayPalException e) {
+            throw new PaymentProcessingException(
+                "Failed to process payment", 
+                translateErrorCode(e)
+            );
+        }
+    }
+}
+```
+
+## 8. 📚 References
 
 ### Books
-1. "Clean Architecture" by Robert C. Martin
-2. "Cloud Design Patterns" by Microsoft
-3. "Release It!" by Michael Nygard
+- "Clean Architecture" by Robert C. Martin
+- "Patterns of Enterprise Application Architecture" by Martin Fowler
+- "Building Microservices" by Sam Newman
 
-### Tools
-1. Resilience4j
-2. Istio
-3. Prometheus (for monitoring)
-4. OpenFeign (Java)
-
-### References
-1. [Microsoft - Gateway Pattern](https://docs.microsoft.com/en-us/azure/architecture/patterns/gateway-aggregation)
-2. [Martin Fowler - Gateway Pattern](https://martinfowler.com/eaaCatalog/gateway.html)
-
-## ❓ FAQs
-
-### Q: When should I use a Gateway vs direct integration?
-A: Use a Gateway when you need to abstract external system details or support multiple providers.
-
-### Q: How do I handle authentication in Gateways?
-A: Use decorators or middleware for authentication, keeping it separate from core Gateway logic.
-
-### Q: Should Gateways handle retries?
-A: Yes, but implement them using decorators to maintain single responsibility.
-
-### Q: How to handle versioning of external APIs?
-A: Create separate Gateway implementations or use adapters for different versions.
-
-### Q: Can I share Gateways between different bounded contexts?
-A: Generally no, each bounded context should have its own Gateways to maintain independence.
+### Articles
+- [Gateway Pattern in Clean Architecture](https://blog.cleancoder.com/uncle-bob/2016/01/04/ALittleArchitecture.html)
+- [Integration Patterns](https://www.enterpriseintegrationpatterns.com/)

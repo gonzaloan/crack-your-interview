@@ -3,445 +3,452 @@ sidebar_position: 1
 title: "Repository Pattern"
 description: "Clean Architecture Layers - Repository Pattern"
 ---
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
+# 📦 Repository Pattern in Clean Architecture
 
-# 🗄️ Repository Pattern in Clean Architecture
+## 1. Overview and Purpose
 
-## Overview
+### Definition
+The Repository Pattern provides a collection-like interface for accessing domain objects, abstracting the underlying data source details and maintaining Clean Architecture's separation of concerns.
 
-The Repository Pattern is an abstraction layer between domain logic and data access logic. It provides a collection-like interface for accessing domain objects while encapsulating the details of data access technologies.
+### Problems Solved
+- Data access coupling
+- Complex query logic
+- Testing difficulty
+- Data source dependencies
+- Transaction management
+- Caching requirements
+- Query optimization
 
-### Real World Analogy
-Think of a library. You don't need to know how books are organized in the storage room or whether they're in different buildings. The librarian (repository) handles all these details. You simply request a book by its attributes (title, author, etc.), and the librarian manages the retrieval process.
+### Business Value
+- Improved maintainability
+- Enhanced testability
+- Data source flexibility
+- Consistent data access
+- Better performance control
+- Simpler domain logic
 
-## 🎯 Key Concepts
-
-### Components
+## 2. 🏗️ Repository Pattern Structure
 
 ```mermaid
 graph TD
-    A[Domain Entity] --- B[Repository Interface]
-    B --- C[Repository Implementation]
-    C --- D[Data Source]
-    E[Business Logic] --- B
-    style B fill:#bbf,stroke:#333
-    style C fill:#dfd,stroke:#333
+    A[Domain Layer] --> B[Repository Interface]
+    B --> C[Repository Implementation]
+    C --> D[Data Source]
+    
+    E[Test Double] --> B
+    
+    style A fill:#f5d6a8,stroke:#333,stroke-width:2px
+    style B fill:#a8d1f5,stroke:#333,stroke-width:2px
+    style C fill:#b8f5a8,stroke:#333,stroke-width:2px
+    style D fill:#f5a8e8,stroke:#333,stroke-width:2px
+    style E fill:#f5d6a8,stroke:#333,stroke-width:2px
 ```
 
-1. **Repository Interface**
-    - Defines available operations
-    - Lives in the domain layer
-    - Technology-agnostic
+## 3. 💻 Implementation Examples
 
-2. **Repository Implementation**
-    - Implements the interface
-    - Lives in the infrastructure layer
-    - Technology-specific
+### Basic Repository Pattern
 
-3. **Domain Entities**
-    - Pure domain objects
-    - No persistence concerns
-    - Business logic only
-
-4. **Data Mappers**
-    - Convert between domain and persistence models
-    - Handle data format transformations
-    - Protect domain model integrity
-
-## 💻 Implementation
-
-### Basic Repository Pattern Implementation
-
-<Tabs>
-  <TabItem value="java" label="Java">
 ```java
-// Domain Entity
-package com.example.domain;
-
-public class User {
-private final String id;
-private String name;
-private String email;
-
-    public User(String id, String name, String email) {
-        this.id = id;
-        this.name = name;
-        this.email = email;
-    }
-
-    // Getters and domain methods
-    public String getId() { return id; }
-    public String getName() { return name; }
-    public String getEmail() { return email; }
-}
-
-// Repository Interface
-package com.example.domain.repository;
-
+// Domain Layer - Repository Interface
 public interface UserRepository {
-User findById(String id);
-List<User> findByName(String name);
-void save(User user);
-void delete(String id);
-List<User> findAll();
+    User save(User user);
+    Optional<User> findById(UserId id);
+    List<User> findByEmail(Email email);
+    void delete(UserId id);
 }
 
-// Data Model
-package com.example.infrastructure.persistence;
-
-@Entity
-@Table(name = "users")
-public class UserEntity {
-@Id
-private String id;
-private String name;
-private String email;
-
-    // Getters and setters
+// Domain Layer - Entity
+public class User {
+    private final UserId id;
+    private Email email;
+    private Name name;
+    private Password password;
+    
+    // Constructor and methods
 }
 
-// Mapper
-package com.example.infrastructure.persistence;
-
-@Component
-public class UserMapper {
-public User toDomain(UserEntity entity) {
-return new User(
-entity.getId(),
-entity.getName(),
-entity.getEmail()
-);
-}
-
-    public UserEntity toEntity(User domain) {
-        UserEntity entity = new UserEntity();
-        entity.setId(domain.getId());
-        entity.setName(domain.getName());
-        entity.setEmail(domain.getEmail());
-        return entity;
-    }
-}
-
-// Repository Implementation
-package com.example.infrastructure.persistence;
-
+// Infrastructure Layer - JPA Implementation
 @Repository
 public class JpaUserRepository implements UserRepository {
-private final JpaRepository<UserEntity, String> jpaRepository;
-private final UserMapper mapper;
-
-    public JpaUserRepository(JpaRepository<UserEntity, String> jpaRepository, UserMapper mapper) {
-        this.jpaRepository = jpaRepository;
-        this.mapper = mapper;
-    }
-
+    private final JpaUserEntityRepository jpaRepository;
+    private final UserMapper mapper;
+    
     @Override
-    public User findById(String id) {
-        return jpaRepository.findById(id)
-            .map(mapper::toDomain)
-            .orElseThrow(() -> new EntityNotFoundException("User not found"));
+    public User save(User user) {
+        UserEntity entity = mapper.toEntity(user);
+        UserEntity savedEntity = jpaRepository.save(entity);
+        return mapper.toDomain(savedEntity);
     }
-
+    
     @Override
-    public List<User> findByName(String name) {
-        return jpaRepository.findByName(name).stream()
+    public Optional<User> findById(UserId id) {
+        return jpaRepository.findById(id.toString())
+            .map(mapper::toDomain);
+    }
+    
+    @Override
+    public List<User> findByEmail(Email email) {
+        return jpaRepository.findByEmail(email.getValue())
+            .stream()
             .map(mapper::toDomain)
             .collect(Collectors.toList());
     }
+}
 
+// Infrastructure Layer - Entity Mapper
+public class UserMapper {
+    public UserEntity toEntity(User user) {
+        return new UserEntity(
+            user.getId().toString(),
+            user.getEmail().getValue(),
+            user.getName().getFullName(),
+            user.getPassword().getHash()
+        );
+    }
+    
+    public User toDomain(UserEntity entity) {
+        return new User(
+            new UserId(entity.getId()),
+            new Email(entity.getEmail()),
+            new Name(entity.getName()),
+            Password.fromHash(entity.getPasswordHash())
+        );
+    }
+}
+```
+
+### Specification Pattern Integration
+
+```java
+// Domain Layer - Specification Interface
+public interface Specification<T> {
+    boolean isSatisfiedBy(T entity);
+    Query toQuery();
+}
+
+// Domain Layer - Composite Specifications
+public class UserSpecifications {
+    public static Specification<User> withEmail(Email email) {
+        return new EmailSpecification(email);
+    }
+    
+    public static Specification<User> withRole(Role role) {
+        return new RoleSpecification(role);
+    }
+    
+    public static Specification<User> active() {
+        return new ActiveSpecification();
+    }
+}
+
+// Domain Layer - Repository Interface with Specifications
+public interface UserRepository {
+    List<User> findAll(Specification<User> spec);
+    Optional<User> findOne(Specification<User> spec);
+    long count(Specification<User> spec);
+}
+
+// Infrastructure Layer - JPA Implementation
+public class JpaUserRepository implements UserRepository {
+    private final EntityManager em;
+    
     @Override
-    @Transactional
-    public void save(User user) {
-        UserEntity entity = mapper.toEntity(user);
-        jpaRepository.save(entity);
+    public List<User> findAll(Specification<User> spec) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<UserEntity> query = cb.createQuery(UserEntity.class);
+        Root<UserEntity> root = query.from(UserEntity.class);
+        
+        query.where(spec.toPredicate(root, query, cb));
+        
+        return em.createQuery(query)
+            .getResultList()
+            .stream()
+            .map(mapper::toDomain)
+            .collect(Collectors.toList());
     }
 }
 ```
-  </TabItem>
-  <TabItem value="go" label="Go">
-```go
-// Domain Entity
-package domain
 
-type User struct {
-    ID    string
-    Name  string
-    Email string
-}
+### Repository with Caching
 
-// Repository Interface
-package domain
-
-type UserRepository interface {
-    FindById(id string) (*User, error)
-    FindByName(name string) ([]*User, error)
-    Save(user *User) error
-    Delete(id string) error
-    FindAll() ([]*User, error)
-}
-
-// Data Model
-package infrastructure
-
-type UserEntity struct {
-    ID    string `db:"id"`
-    Name  string `db:"name"`
-    Email string `db:"email"`
-}
-
-// Mapper
-package infrastructure
-
-func toEntity(user *domain.User) *UserEntity {
-    return &UserEntity{
-        ID:    user.ID,
-        Name:  user.Name,
-        Email: user.Email,
-    }
-}
-
-func toDomain(entity *UserEntity) *domain.User {
-    return &domain.User{
-        ID:    entity.ID,
-        Name:  entity.Name,
-        Email: entity.Email,
-    }
-}
-
-// Repository Implementation
-package infrastructure
-
-type PostgresUserRepository struct {
-    db *sql.DB
-}
-
-func NewPostgresUserRepository(db *sql.DB) domain.UserRepository {
-    return &PostgresUserRepository{db: db}
-}
-
-func (r *PostgresUserRepository) FindById(id string) (*domain.User, error) {
-    entity := &UserEntity{}
-    err := r.db.QueryRow(
-        "SELECT id, name, email FROM users WHERE id = $1",
-        id,
-    ).Scan(&entity.ID, &entity.Name, &entity.Email)
-    
-    if err == sql.ErrNoRows {
-        return nil, fmt.Errorf("user not found")
-    }
-    if err != nil {
-        return nil, err
-    }
-    
-    return toDomain(entity), nil
-}
-
-func (r *PostgresUserRepository) Save(user *domain.User) error {
-    entity := toEntity(user)
-    _, err := r.db.Exec(
-        "INSERT INTO users (id, name, email) VALUES ($1, $2, $3) "+
-        "ON CONFLICT (id) DO UPDATE SET name = $2, email = $3",
-        entity.ID, entity.Name, entity.Email,
-    )
-    return err
-}
-```
-  </TabItem>
-</Tabs>
-
-## 🔄 Related Patterns
-
-1. **Unit of Work Pattern**
-    - Tracks changes to objects
-    - Coordinates writing out changes
-    - Maintains object identity
-
-2. **Data Mapper Pattern**
-    - Separates domain from persistence
-    - Handles data transformations
-    - Complements Repository Pattern
-
-3. **Specification Pattern**
-    - Encapsulates query criteria
-    - Combines with Repository for complex queries
-    - Keeps domain logic clean
-
-## ✅ Best Practices
-
-### Configuration
-1. Use dependency injection for repositories
-2. Configure connection pools appropriately
-3. Use appropriate transaction boundaries
-4. Implement retry policies
-
-### Monitoring
-1. Log repository operations
-2. Track query performance
-3. Monitor connection pool usage
-4. Implement health checks
-
-### Testing
-1. Use in-memory repositories for unit tests
-2. Implement integration tests with test databases
-3. Test edge cases and error conditions
-4. Mock repositories in service tests
-
-## ⚠️ Common Pitfalls
-
-1. **Fat Repositories**
-    - Symptom: Too many query methods
-    - Solution: Use specification pattern or query objects
-
-2. **Leaking Infrastructure Concerns**
-    - Symptom: Domain knows about database details
-    - Solution: Strict separation using interfaces and mappers
-
-3. **Missing Error Handling**
-    - Symptom: Uncaught database errors
-    - Solution: Proper error mapping and handling
-
-4. **N+1 Query Problems**
-    - Symptom: Multiple queries for related data
-    - Solution: Implement batch loading and proper eager loading
-
-## 🎯 Use Cases
-
-### 1. E-commerce Product Catalog
-```mermaid
-graph LR
-    A[Product Service] --> B[Product Repository]
-    B --> C[Cache Repository]
-    B --> D[Database Repository]
-```
-
-### 2. User Management System
-- Multiple data sources (DB, LDAP, External API)
-- Caching layer
-- Audit logging
-
-### 3. Content Management System
-- Document storage
-- Version control
-- Multiple storage backends
-
-## 🔍 Deep Dive Topics
-
-### Thread Safety
-
-1. **Connection Management**
 ```java
-@Repository
-public class ThreadSafeRepository {
-    private final DataSource dataSource;
-    
-    public ThreadSafeRepository(DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
-    
-    public void save(User user) {
-        try (Connection conn = dataSource.getConnection()) {
-            // Use connection within transaction
-        }
-    }
-}
-```
-
-2. **Caching Considerations**
-```java
-@Repository
-public class CachingRepository {
-    private final Cache cache;
+// Infrastructure Layer - Cached Repository
+public class CachedUserRepository implements UserRepository {
     private final UserRepository delegate;
-    
-    public User findById(String id) {
-        return cache.get(id, () -> delegate.findById(id));
-    }
-}
-```
-
-### Distributed Systems
-
-1. **Sharding**
-```java
-public class ShardedRepository implements UserRepository {
-    private final Map<String, UserRepository> shards;
-    
-    public User findById(String id) {
-        String shardKey = getShardKey(id);
-        return shards.get(shardKey).findById(id);
-    }
-}
-```
-
-2. **Replication**
-```java
-public class ReplicatedRepository implements UserRepository {
-    private final UserRepository master;
-    private final List<UserRepository> replicas;
-    
-    public User findById(String id) {
-        return loadBalancer.next(replicas).findById(id);
-    }
-    
-    public void save(User user) {
-        master.save(user);
-    }
-}
-```
-
-### Performance
-
-1. **Batch Operations**
-```java
-public interface BatchUserRepository extends UserRepository {
-    List<User> findByIds(List<String> ids);
-    void saveAll(List<User> users);
-}
-```
-
-2. **Caching Strategies**
-```java
-public class CacheableRepository implements UserRepository {
-    private final LoadingCache<String, User> cache;
+    private final Cache cache;
     
     @Override
-    public User findById(String id) {
-        return cache.get(id);
+    public Optional<User> findById(UserId id) {
+        String cacheKey = "user:" + id;
+        
+        return cache.get(cacheKey, () -> 
+            delegate.findById(id)
+        );
+    }
+    
+    @Override
+    public User save(User user) {
+        User savedUser = delegate.save(user);
+        cache.put("user:" + user.getId(), savedUser);
+        return savedUser;
+    }
+    
+    @Override
+    public void delete(UserId id) {
+        delegate.delete(id);
+        cache.evict("user:" + id);
+    }
+}
+
+// Infrastructure Layer - Cache Implementation
+public class RedisCache implements Cache {
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final Duration defaultTtl;
+    
+    @Override
+    public <T> Optional<T> get(String key, Class<T> type) {
+        return Optional.ofNullable(
+            redisTemplate.opsForValue().get(key)
+        ).map(type::cast);
+    }
+    
+    @Override
+    public void put(String key, Object value) {
+        redisTemplate.opsForValue().set(
+            key, 
+            value, 
+            defaultTtl
+        );
+    }
+    
+    @Override
+    public void evict(String key) {
+        redisTemplate.delete(key);
     }
 }
 ```
 
-## 📚 Additional Resources
+### Async Repository
+
+```java
+// Domain Layer - Async Repository Interface
+public interface AsyncUserRepository {
+    CompletableFuture<User> save(User user);
+    CompletableFuture<Optional<User>> findById(UserId id);
+    CompletableFuture<List<User>> findAll(Specification<User> spec);
+}
+
+// Infrastructure Layer - Async Implementation
+@Repository
+public class AsyncUserRepositoryImpl implements AsyncUserRepository {
+    private final UserRepository synchronousRepository;
+    private final Executor executor;
+    
+    @Override
+    public CompletableFuture<User> save(User user) {
+        return CompletableFuture.supplyAsync(
+            () -> synchronousRepository.save(user),
+            executor
+        );
+    }
+    
+    @Override
+    public CompletableFuture<Optional<User>> findById(UserId id) {
+        return CompletableFuture.supplyAsync(
+            () -> synchronousRepository.findById(id),
+            executor
+        );
+    }
+}
+
+// Use Case Layer - Async Usage
+public class CreateUserUseCase {
+    private final AsyncUserRepository userRepository;
+    
+    public CompletableFuture<UserId> execute(CreateUserCommand command) {
+        return userRepository.save(
+            new User(
+                UserId.generate(),
+                command.getEmail(),
+                command.getName(),
+                command.getPassword()
+            )
+        ).thenApply(User::getId);
+    }
+}
+```
+
+## 4. 🧪 Testing Strategies
+
+### Repository Tests
+
+```java
+// Repository Test Double
+public class InMemoryUserRepository implements UserRepository {
+    private final Map<UserId, User> users = new ConcurrentHashMap<>();
+    
+    @Override
+    public User save(User user) {
+        users.put(user.getId(), user);
+        return user;
+    }
+    
+    @Override
+    public Optional<User> findById(UserId id) {
+        return Optional.ofNullable(users.get(id));
+    }
+    
+    @Override
+    public List<User> findByEmail(Email email) {
+        return users.values().stream()
+            .filter(user -> user.getEmail().equals(email))
+            .collect(Collectors.toList());
+    }
+}
+
+// Repository Integration Test
+@DataJpaTest
+public class JpaUserRepositoryIntegrationTest {
+    @Autowired private JpaUserRepository repository;
+    
+    @Test
+    void shouldSaveAndRetrieveUser() {
+        // Arrange
+        User user = createTestUser();
+        
+        // Act
+        User savedUser = repository.save(user);
+        Optional<User> foundUser = repository.findById(savedUser.getId());
+        
+        // Assert
+        assertTrue(foundUser.isPresent());
+        assertEquals(user.getEmail(), foundUser.get().getEmail());
+    }
+    
+    @Test
+    void shouldFindByEmailPattern() {
+        // Arrange
+        repository.save(createTestUser("test1@example.com"));
+        repository.save(createTestUser("test2@example.com"));
+        repository.save(createTestUser("other@example.com"));
+        
+        // Act
+        List<User> users = repository.findByEmailPattern("test%");
+        
+        // Assert
+        assertEquals(2, users.size());
+    }
+}
+```
+
+## 5. 🎯 Best Practices
+
+### 1. Keep Repository Interfaces Clean
+
+```java
+// Good: Clean and focused interface
+public interface OrderRepository {
+    Order save(Order order);
+    Optional<Order> findById(OrderId id);
+    List<Order> findByCustomer(CustomerId customerId);
+    void delete(OrderId id);
+}
+
+// Bad: Mixed responsibilities and leaked implementation details
+public interface OrderRepository {
+    @Transactional
+    Order save(Order order, boolean flush);
+    Optional<Order> findById(String id);  // Leaks String ID
+    Page<Order> findAll(Pageable pageable);  // Leaks Spring Data
+    @Query("SELECT o FROM Order o")  // Leaks JPA
+    List<Order> customQuery();
+}
+```
+
+### 2. Use Specifications for Complex Queries
+
+```java
+public class OrderSpecifications {
+    public static Specification<Order> withStatus(OrderStatus status) {
+        return (root, query, cb) ->
+            cb.equal(root.get("status"), status);
+    }
+    
+    public static Specification<Order> createdAfter(Instant date) {
+        return (root, query, cb) ->
+            cb.greaterThan(root.get("createdAt"), date);
+    }
+    
+    // Usage
+    List<Order> orders = orderRepository.findAll(
+        withStatus(OrderStatus.PENDING)
+            .and(createdAfter(yesterday()))
+    );
+}
+```
+
+### 3. Implement Proper Transaction Management
+
+```java
+public class TransactionalOrderRepository implements OrderRepository {
+    private final OrderRepository delegate;
+    private final TransactionManager txManager;
+    
+    @Override
+    public Order save(Order order) {
+        return txManager.executeInTransaction(() -> {
+            Order savedOrder = delegate.save(order);
+            publishEvent(new OrderSavedEvent(savedOrder));
+            return savedOrder;
+        });
+    }
+}
+```
+
+## 6. 🚫 Anti-patterns
+
+### Common Mistakes to Avoid
+
+1. **Exposing ORM Details**
+```java
+// Wrong: Exposing JPA details
+public interface OrderRepository {
+    @Query("SELECT o FROM Order o WHERE o.status = :status")
+    List<Order> findByStatus(@Param("status") String status);
+}
+
+// Better: Hide implementation details
+public interface OrderRepository {
+    List<Order> findByStatus(OrderStatus status);
+}
+```
+
+2. **Business Logic in Repositories**
+```java
+// Wrong: Business logic in repository
+public class OrderRepository {
+    public void processOrder(Order order) {
+        order.calculateTotal();  // Business logic!
+        order.validate();        // Business logic!
+        save(order);
+    }
+}
+
+// Better: Keep repository focused on persistence
+public class OrderRepository {
+    public Order save(Order order) {
+        return entityManager.merge(order);
+    }
+}
+```
+
+## 7. 📚 References
 
 ### Books
-1. "Patterns of Enterprise Application Architecture" by Martin Fowler
-2. "Domain-Driven Design" by Eric Evans
-3. "Clean Architecture" by Robert C. Martin
+- "Patterns of Enterprise Application Architecture" by Martin Fowler
+- "Domain-Driven Design" by Eric Evans
+- "Clean Architecture" by Robert C. Martin
 
-### Tools
-1. Spring Data JPA
-2. GORM (Go)
-3. Dapper
-4. Entity Framework
-
-### References
-1. [Microsoft Docs - Repository Pattern](https://docs.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/infrastructure-persistence-layer-implementation-entity-framework-core)
-2. [Martin Fowler - Repository Pattern](https://martinfowler.com/eaaCatalog/repository.html)
-
-## ❓ FAQs
-
-### Q: When should I use the Repository Pattern?
-A: Use it when you need to abstract data access logic and maintain a clean domain model.
-
-### Q: Should repositories return domain objects or DTOs?
-A: Domain objects within the domain layer, DTOs when crossing boundaries.
-
-### Q: How do I handle complex queries?
-A: Use the Specification Pattern or dedicated query objects.
-
-### Q: Should I implement a generic repository?
-A: Generally no, as it often leads to leaky abstractions. Create specific repositories for each aggregate root.
-
-### Q: How do I handle transactions across multiple repositories?
-A: Use a Unit of Work pattern or service-level transaction boundaries.
+### Articles
+- [Repository Pattern](https://martinfowler.com/eaaCatalog/repository.html)
+- [The Repository Pattern](https://ardalis.com/the-repository-pattern/)

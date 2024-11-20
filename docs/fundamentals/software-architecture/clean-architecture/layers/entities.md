@@ -3,304 +3,496 @@ sidebar_position: 1
 title: "Entities"
 description: "Clean Architecture Layers - Entities"
 ---
+# 🏛️ Entities Layer in Clean Architecture
 
-# 🏛️ Clean Architecture: Entities Layer
+## 1. Overview and Purpose
 
-## Overview
+### Definition
+The Entities layer represents enterprise-wide business rules and contains the core business objects of the application. These objects encapsulate the most general and high-level rules that the business operates with.
 
-Entities (also known as Enterprise Business Rules) represent the core business objects of your application. They encapsulate the most general and high-level rules that define your business. These objects are the least likely to change when something external changes.
+### Key Characteristics
+- Independent of application specifics
+- Pure business logic
+- No framework dependencies
+- High stability
+- Rich behavior
+- Self-contained validation
 
-### Real-World Analogy
-Think of entities like the fundamental laws of physics - they remain constant regardless of how we measure or observe them. In a banking system, concepts like "Account" and "Transaction" are entities because their core rules (like "accounts must maintain a non-negative balance") remain true regardless of how the application is delivered or what database is used.
+### Business Value
+- Consistent business rules
+- Reduced duplication
+- Better maintainability
+- Clear domain model
+- Enhanced testability
+- Business-driven design
 
-## Key Concepts 🔑
+## 2. 🏗️ Core Components
 
-### Core Components
-
-1. **Business Objects**
-   - Pure domain objects
-   - Independent of frameworks
-   - No external dependencies
-   - Contains business rules
-
-2. **Business Rules**
-   - Validation rules
-   - Calculation methods
-   - Domain-specific logic
-   - State management rules
-
-3. **Entity States**
-   - Creation
-   - Validation
-   - Modification
-   - Business rule execution
-
-## Implementation 💻
-
-### Basic Entity Implementation
-
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-
-<Tabs>
-  <TabItem value="java" label="Java">
-    ```java
-    package com.example.domain.entities;
-
-    import java.math.BigDecimal;
-    import java.time.LocalDateTime;
-    import java.util.UUID;
-
-    public class Account {
-        private final UUID id;
-        private String ownerName;
-        private BigDecimal balance;
-        private final LocalDateTime createdAt;
-        
-        public Account(String ownerName, BigDecimal initialBalance) {
-            this.id = UUID.randomUUID();
-            this.ownerName = ownerName;
-            this.balance = initialBalance;
-            this.createdAt = LocalDateTime.now();
-            
-            validateState();
-        }
-        
-        public void deposit(BigDecimal amount) {
-            if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-                throw new IllegalArgumentException("Deposit amount must be positive");
-            }
-            this.balance = this.balance.add(amount);
-        }
-        
-        public void withdraw(BigDecimal amount) {
-            if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-                throw new IllegalArgumentException("Withdrawal amount must be positive");
-            }
-            
-            if (balance.subtract(amount).compareTo(BigDecimal.ZERO) < 0) {
-                throw new IllegalStateException("Insufficient funds");
-            }
-            
-            this.balance = this.balance.subtract(amount);
-        }
-        
-        private void validateState() {
-            if (ownerName == null || ownerName.trim().isEmpty()) {
-                throw new IllegalStateException("Owner name cannot be empty");
-            }
-            
-            if (balance == null || balance.compareTo(BigDecimal.ZERO) < 0) {
-                throw new IllegalStateException("Balance cannot be negative");
-            }
-        }
-        
-        // Getters (no setters to ensure immutability)
-        public UUID getId() { return id; }
-        public String getOwnerName() { return ownerName; }
-        public BigDecimal getBalance() { return balance; }
-        public LocalDateTime getCreatedAt() { return createdAt; }
+```mermaid
+classDiagram
+    class Entity {
+        +Id identity
+        +validate()
+        +equals()
+        +hashCode()
     }
-    ```
-  </TabItem>
-  <TabItem value="go" label="Go">
-    ```go
-    package entities
-
-    import (
-        "errors"
-        "math/big"
-        "time"
-
-        "github.com/google/uuid"
-    )
-
-    type Account struct {
-        id        uuid.UUID
-        ownerName string
-        balance   *big.Float
-        createdAt time.Time
+    
+    class ValueObject {
+        +equals()
+        +hashCode()
+        +validate()
     }
-
-    func NewAccount(ownerName string, initialBalance *big.Float) (*Account, error) {
-        account := &Account{
-            id:        uuid.New(),
-            ownerName: ownerName,
-            balance:   initialBalance,
-            createdAt: time.Now(),
-        }
-        
-        if err := account.validateState(); err != nil {
-            return nil, err
-        }
-        
-        return account, nil
+    
+    class DomainEvent {
+        +occurredOn
+        +validate()
     }
-
-    func (a *Account) Deposit(amount *big.Float) error {
-        if amount.Cmp(big.NewFloat(0)) <= 0 {
-            return errors.New("deposit amount must be positive")
-        }
-        
-        a.balance.Add(a.balance, amount)
-        return nil
+    
+    class AggregateRoot {
+        +List~DomainEvent~ events
+        +applyEvent()
+        +clearEvents()
     }
+    
+    Entity <|-- AggregateRoot
+    AggregateRoot o-- DomainEvent
+    AggregateRoot o-- ValueObject
+```
 
-    func (a *Account) Withdraw(amount *big.Float) error {
-        if amount.Cmp(big.NewFloat(0)) <= 0 {
-            return errors.New("withdrawal amount must be positive")
-        }
-        
-        newBalance := new(big.Float).Sub(a.balance, amount)
-        if newBalance.Cmp(big.NewFloat(0)) < 0 {
-            return errors.New("insufficient funds")
-        }
-        
-        a.balance = newBalance
-        return nil
+## 3. 💻 Implementation Examples
+
+### Entity Implementation
+
+```java
+// Base Entity Class
+public abstract class Entity<ID extends Identifier> {
+    protected final ID id;
+    
+    protected Entity(ID id) {
+        this.id = Objects.requireNonNull(id, "ID must not be null");
     }
-
-    func (a *Account) validateState() error {
-        if a.ownerName == "" {
-            return errors.New("owner name cannot be empty")
-        }
-        
-        if a.balance == nil || a.balance.Cmp(big.NewFloat(0)) < 0 {
-            return errors.New("balance cannot be negative")
-        }
-        
-        return nil
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Entity<?> entity = (Entity<?>) o;
+        return id.equals(entity.id);
     }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+}
 
-    // Getters
-    func (a *Account) ID() uuid.UUID { return a.id }
-    func (a *Account) OwnerName() string { return a.ownerName }
-    func (a *Account) Balance() *big.Float { return a.balance }
-    func (a *Account) CreatedAt() time.Time { return a.createdAt }
-    ```
-  </TabItem>
-</Tabs>
+// User Entity
+public class User extends Entity<UserId> {
+    private Email email;
+    private Name name;
+    private Password password;
+    private Role role;
+    private UserStatus status;
+    
+    private User(UserId id, Email email, Name name, Password password) {
+        super(id);
+        this.email = Objects.requireNonNull(email);
+        this.name = Objects.requireNonNull(name);
+        this.password = Objects.requireNonNull(password);
+        this.role = Role.USER;
+        this.status = UserStatus.ACTIVE;
+        validate();
+    }
+    
+    // Factory method
+    public static User create(Email email, Name name, Password password) {
+        return new User(UserId.generate(), email, name, password);
+    }
+    
+    // Business methods
+    public void changePassword(Password currentPassword, Password newPassword) {
+        if (!this.password.matches(currentPassword)) {
+            throw new InvalidPasswordException();
+        }
+        this.password = newPassword;
+    }
+    
+    public void deactivate() {
+        if (this.status == UserStatus.INACTIVE) {
+            throw new UserAlreadyInactiveException();
+        }
+        this.status = UserStatus.INACTIVE;
+    }
+    
+    // Validation
+    private void validate() {
+        if (email == null || name == null || password == null) {
+            throw new InvalidUserException("Required fields cannot be null");
+        }
+    }
+}
+```
 
-## Related Patterns 🔄
+### Value Objects
 
-1. **Domain-Driven Design (DDD)**
-   - Entities in Clean Architecture align with DDD's concept of entities
-   - Both emphasize business rules and domain logic
-   - Can be used together for complex domain modeling
+```java
+// Email Value Object
+public record Email(String value) {
+    public Email {
+        Objects.requireNonNull(value, "Email value must not be null");
+        if (!isValid(value)) {
+            throw new InvalidEmailException(value);
+        }
+    }
+    
+    private static boolean isValid(String email) {
+        return email.matches("^[A-Za-z0-9+_.-]+@(.+)$");
+    }
+}
 
-2. **Value Objects**
-   - Complement entities by representing immutable values
-   - Used within entities to represent attributes
-   - Help maintain invariants
+// Money Value Object
+public record Money(BigDecimal amount, Currency currency) {
+    public Money {
+        Objects.requireNonNull(amount, "Amount must not be null");
+        Objects.requireNonNull(currency, "Currency must not be null");
+        if (amount.scale() > currency.getDefaultFractionDigits()) {
+            throw new InvalidMoneyException("Invalid scale for currency");
+        }
+    }
+    
+    public static Money of(BigDecimal amount, Currency currency) {
+        return new Money(amount, currency);
+    }
+    
+    public static Money zero(Currency currency) {
+        return new Money(BigDecimal.ZERO, currency);
+    }
+    
+    public Money add(Money other) {
+        if (!this.currency.equals(other.currency)) {
+            throw new CurrencyMismatchException();
+        }
+        return new Money(this.amount.add(other.amount), this.currency);
+    }
+    
+    public Money subtract(Money other) {
+        if (!this.currency.equals(other.currency)) {
+            throw new CurrencyMismatchException();
+        }
+        return new Money(this.amount.subtract(other.amount), this.currency);
+    }
+    
+    public Money multiply(BigDecimal multiplier) {
+        return new Money(this.amount.multiply(multiplier), this.currency);
+    }
+}
+```
 
-3. **Aggregate Pattern**
-   - Groups related entities
-   - Maintains consistency boundaries
-   - Enforces business rules across multiple entities
+### Aggregate Root
 
-## Best Practices ✨
+```java
+public class Order extends AggregateRoot<OrderId> {
+    private CustomerId customerId;
+    private List<OrderLine> orderLines;
+    private OrderStatus status;
+    private Money total;
+    private Instant createdAt;
+    
+    private Order(OrderId id, CustomerId customerId) {
+        super(id);
+        this.customerId = customerId;
+        this.orderLines = new ArrayList<>();
+        this.status = OrderStatus.DRAFT;
+        this.total = Money.zero(Currency.getInstance("USD"));
+        this.createdAt = Instant.now();
+    }
+    
+    public static Order create(CustomerId customerId) {
+        Order order = new Order(OrderId.generate(), customerId);
+        order.addDomainEvent(new OrderCreatedEvent(order.id));
+        return order;
+    }
+    
+    public void addLine(ProductId productId, int quantity, Money unitPrice) {
+        validateOrderIsModifiable();
+        OrderLine line = new OrderLine(productId, quantity, unitPrice);
+        orderLines.add(line);
+        recalculateTotal();
+        addDomainEvent(new OrderLineAddedEvent(id, line));
+    }
+    
+    public void submit() {
+        validateCanSubmit();
+        this.status = OrderStatus.SUBMITTED;
+        addDomainEvent(new OrderSubmittedEvent(id));
+    }
+    
+    private void validateCanSubmit() {
+        if (status != OrderStatus.DRAFT) {
+            throw new InvalidOrderStateException(
+                "Only draft orders can be submitted"
+            );
+        }
+        if (orderLines.isEmpty()) {
+            throw new InvalidOrderException(
+                "Cannot submit empty order"
+            );
+        }
+    }
+    
+    private void recalculateTotal() {
+        this.total = orderLines.stream()
+            .map(OrderLine::getTotal)
+            .reduce(Money.zero(Currency.getInstance("USD")), Money::add);
+    }
+}
 
-### Configuration
-1. Keep entities framework-independent
-2. Use immutable properties where possible
-3. Implement validation in constructors
-4. Use factory methods for complex creation logic
+// Domain Events
+public record OrderCreatedEvent(OrderId orderId) 
+    implements DomainEvent {}
 
-### Monitoring
-1. Log business rule violations
-2. Track entity state changes
-3. Monitor performance metrics
-4. Implement auditing capabilities
+public record OrderLineAddedEvent(OrderId orderId, OrderLine line) 
+    implements DomainEvent {}
 
-### Testing
-1. Unit test all business rules
-2. Use property-based testing for invariants
-3. Test edge cases extensively
-4. Implement integration tests for entity relationships
+public record OrderSubmittedEvent(OrderId orderId) 
+    implements DomainEvent {}
+```
 
-## Common Pitfalls 🚫
+### Domain Services
 
-1. **Adding Infrastructure Dependencies**
-   - Solution: Keep entities pure and independent
-   - Move infrastructure concerns to outer layers
+```java
+// Domain Service Interface
+public interface PricingService {
+    Money calculatePrice(Product product, int quantity);
+    Money applyDiscount(Money price, Discount discount);
+}
 
-2. **Exposing Internal State**
-   - Solution: Use immutable properties
-   - Implement behavior-rich methods instead of getters/setters
+// Domain Service Implementation
+public class DefaultPricingService implements PricingService {
+    @Override
+    public Money calculatePrice(Product product, int quantity) {
+        Money unitPrice = product.getPrice();
+        return unitPrice.multiply(BigDecimal.valueOf(quantity));
+    }
+    
+    @Override
+    public Money applyDiscount(Money price, Discount discount) {
+        BigDecimal discountFactor = BigDecimal.ONE.subtract(
+            discount.percentage().divide(
+                BigDecimal.valueOf(100),
+                2,
+                RoundingMode.HALF_UP
+            )
+        );
+        return price.multiply(discountFactor);
+    }
+}
+```
 
-3. **Missing Validation**
-   - Solution: Validate in constructors
-   - Implement invariant checks in state-changing methods
+## 4. 🧪 Testing Entities
 
-4. **Anemic Domain Model**
-   - Solution: Include business logic in entities
-   - Don't treat entities as data containers
+```java
+public class OrderTest {
+    private Order order;
+    private CustomerId customerId;
+    
+    @BeforeEach
+    void setUp() {
+        customerId = CustomerId.generate();
+        order = Order.create(customerId);
+    }
+    
+    @Test
+    void shouldCreateOrderSuccessfully() {
+        assertNotNull(order.getId());
+        assertEquals(customerId, order.getCustomerId());
+        assertEquals(OrderStatus.DRAFT, order.getStatus());
+        assertTrue(order.getOrderLines().isEmpty());
+        assertEquals(Money.zero(Currency.getInstance("USD")), order.getTotal());
+    }
+    
+    @Test
+    void shouldAddLineSuccessfully() {
+        // Arrange
+        ProductId productId = ProductId.generate();
+        Money unitPrice = Money.of(BigDecimal.TEN, Currency.getInstance("USD"));
+        
+        // Act
+        order.addLine(productId, 2, unitPrice);
+        
+        // Assert
+        assertEquals(1, order.getOrderLines().size());
+        assertEquals(Money.of(BigDecimal.valueOf(20), Currency.getInstance("USD")), 
+                    order.getTotal());
+    }
+    
+    @Test
+    void shouldNotSubmitEmptyOrder() {
+        assertThrows(InvalidOrderException.class, () -> 
+            order.submit()
+        );
+    }
+}
+```
 
-## Use Cases 🎯
+## 5. 🎯 Best Practices
 
-### 1. Financial System
-- Account management
-- Transaction processing
-- Balance calculations
-- Audit trail maintenance
+### 1. Encapsulation
 
-### 2. E-commerce Platform
-- Product catalog
-- Order processing
-- Inventory management
-- Pricing rules
+```java
+// Good: Proper encapsulation
+public class Product {
+    private final ProductId id;
+    private Money price;
+    private int stockLevel;
+    
+    public void adjustStock(int quantity) {
+        if (stockLevel + quantity < 0) {
+            throw new InsufficientStockException();
+        }
+        stockLevel += quantity;
+    }
+}
 
-### 3. Healthcare System
-- Patient records
-- Medical history
-- Treatment plans
-- Prescription management
+// Bad: Exposed internals
+public class Product {
+    public int stockLevel;  // Direct field access
+    
+    public void setStockLevel(int level) {  // No validation
+        this.stockLevel = level;
+    }
+}
+```
 
-## Deep Dive Topics 🤿
+### 2. Rich Domain Model
 
-### Thread Safety
-1. **Immutability**
-   - Design entities to be immutable where possible
-   - Use thread-safe collections
-   - Implement copy-on-write when needed
+```java
+// Good: Rich behavior
+public class Order {
+    public void cancel() {
+        validateCanBeCancelled();
+        this.status = OrderStatus.CANCELLED;
+        this.cancelledAt = Instant.now();
+        addDomainEvent(new OrderCancelledEvent(this.id));
+    }
+    
+    private void validateCanBeCancelled() {
+        if (status == OrderStatus.DELIVERED) {
+            throw new InvalidOrderStateException(
+                "Delivered orders cannot be cancelled"
+            );
+        }
+    }
+}
 
-### Distributed Systems
-1. **Consistency**
-   - Implement version control
-   - Handle concurrent modifications
-   - Use event sourcing when appropriate
+// Bad: Anemic domain model
+public class Order {
+    private OrderStatus status;
+    private Instant cancelledAt;
+    
+    // Just getters and setters, no behavior
+    public void setStatus(OrderStatus status) {
+        this.status = status;
+    }
+    
+    public void setCancelledAt(Instant cancelledAt) {
+        this.cancelledAt = cancelledAt;
+    }
+}
+```
 
-### Performance
-1. **Optimization**
-   - Lazy loading of heavy properties
-   - Efficient validation strategies
-   - Caching mechanisms
+### 3. Immutable Value Objects
 
-## Additional Resources 📚
+```java
+// Good: Immutable value object
+public record Address(
+    String street,
+    String city,
+    String country,
+    String postalCode
+) {
+    public Address {
+        Objects.requireNonNull(street, "Street must not be null");
+        Objects.requireNonNull(city, "City must not be null");
+        Objects.requireNonNull(country, "Country must not be null");
+        Objects.requireNonNull(postalCode, "Postal code must not be null");
+    }
+    
+    public Address withStreet(String newStreet) {
+        return new Address(newStreet, city, country, postalCode);
+    }
+}
 
-### References
-1. [Clean Architecture by Robert C. Martin](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
-2. [Domain-Driven Design by Eric Evans](https://domainlanguage.com/ddd/)
-3. [Patterns of Enterprise Application Architecture by Martin Fowler](https://martinfowler.com/books/eaa.html)
+// Bad: Mutable value object
+public class Address {
+    private String street;
+    private String city;
+    
+    public void setStreet(String street) {
+        this.street = street;
+    }
+}
+```
 
-### Tools
-1. [PlantUML](https://plantuml.com/) - For entity relationship diagrams
-2. [JaCoCo](https://www.jacoco.org/jacoco/) - Code coverage for entity testing
-3. [GoDoc](https://pkg.go.dev/) - Documentation generator for Go entities
+## 6. 🚫 Anti-patterns
 
-## FAQs ❓
+### Common Mistakes to Avoid
 
-### Q: Should entities contain database annotations?
-A: No, entities should be pure domain objects. Database mapping should be handled in the infrastructure layer.
+1. **Framework Dependencies**
+```java
+// Wrong: Framework dependency in entity
+@Entity
+@Table(name = "users")
+public class User {
+    @Id
+    @GeneratedValue
+    private Long id;
+    
+    @Column(nullable = false)
+    private String email;
+}
 
-### Q: How do I handle complex business rules?
-A: Break them down into smaller, composable rules within the entity or create separate policy objects.
+// Better: Pure domain entity
+public class User extends Entity<UserId> {
+    private final Email email;
+    
+    private User(UserId id, Email email) {
+        super(id);
+        this.email = email;
+    }
+}
+```
 
-### Q: Can entities reference other entities?
-A: Yes, but consider using aggregate patterns and maintaining proper boundaries.
+2. **Business Logic Outside Entities**
+```java
+// Wrong: Business logic in service
+public class OrderService {
+    public void cancelOrder(Order order) {
+        if (order.getStatus() == OrderStatus.DELIVERED) {
+            throw new InvalidOrderStateException();
+        }
+        order.setStatus(OrderStatus.CANCELLED);
+        order.setCancelledAt(Instant.now());
+    }
+}
 
-### Q: How do I handle validation across multiple entities?
-A: Use domain services or aggregate roots to coordinate multi-entity validation.
+// Better: Business logic in entity
+public class Order extends Entity<OrderId> {
+    public void cancel() {
+        validateCanBeCancelled();
+        this.status = OrderStatus.CANCELLED;
+        this.cancelledAt = Instant.now();
+    }
+}
+```
 
-### Q: Should I use inheritance in entities?
-A: Use it sparingly and prefer composition over inheritance. Consider interfaces for polymorphic behavior.
+## 7. 📚 References
+
+### Books
+- "Domain-Driven Design" by Eric Evans
+- "Clean Architecture" by Robert C. Martin
+- "Implementing Domain-Driven Design" by Vaughn Vernon
+
+### Articles
+- [Entity vs Value Object](https://enterprisecraftsmanship.com/posts/entity-vs-value-object-the-ultimate-list-of-differences/)
+- [DDD Aggregates](https://martinfowler.com/bliki/DDD_Aggregate.html)

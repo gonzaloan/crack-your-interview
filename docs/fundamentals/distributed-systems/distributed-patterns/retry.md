@@ -3,360 +3,483 @@ sidebar_position: 4
 title: "Retry"
 description: "Distributed Patterns - Retry"
 ---
+# 🔄 Distributed Patterns: Retry Pattern
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
+## 1. Overview and Problem Statement 🎯
 
-# 🔄 Retry Pattern
+### Definition
+The Retry Pattern enables applications to handle transient failures by transparently retrying failed operations. This pattern helps improve application stability and resilience in distributed systems where temporary failures are common.
 
-## Overview
+### Problems Solved
+- Transient network failures
+- Temporary service unavailability
+- Database deadlocks
+- Rate limiting issues
+- Resource contention
+- Service throttling
 
-The Retry pattern enables an application to handle transient failures when it tries to connect to a service or network resource by transparently retrying a failed operation. This pattern provides stability and resilience in distributed systems where temporary failures are common.
+### Business Value
+- **Improved Reliability**: Automatic recovery from transient failures
+- **Higher Availability**: Reduced system downtime
+- **Better User Experience**: Transparent error handling
+- **Cost Efficiency**: Reduced manual intervention
+- **System Resilience**: Graceful handling of temporary issues
 
-### Real-World Analogy
-Think of trying to make a phone call in an area with poor reception. If the call fails, you naturally try again after a short wait, maybe moving to a better location. If it still fails, you might wait longer before trying again. This is exactly how the Retry pattern works - attempting operations again with increasing delays between attempts.
+## 2. Detailed Solution/Architecture 🏗️
 
-## 🔑 Key Concepts
+### Core Concepts
 
-### Components
-1. **Retry Strategy**: Logic determining when and how to retry
-2. **Backoff Policy**: Time delay between retry attempts
-3. **Retry Count**: Maximum number of retry attempts
-4. **Failure Detection**: Logic to identify retryable failures
-5. **Success Criteria**: Conditions for successful operation
+```mermaid
+graph TD
+    A[Retry Pattern] --> B[Retry Strategies]
+    A --> C[Backoff Policies]
+    A --> D[Circuit Breaking]
+    
+    B --> B1[Immediate Retry]
+    B --> B2[Fixed Interval]
+    B --> B3[Incremental]
+    B --> B4[Exponential]
+    
+    C --> C1[Linear Backoff]
+    C --> C2[Exponential Backoff]
+    C --> C3[Decorrelated Jitter]
+    
+    D --> D1[Failure Threshold]
+    D --> D2[Recovery Time]
+    D --> D3[Half-Open State]
+```
 
-### Types of Retry Policies
-1. **Immediate Retry**: Retry immediately after failure
-2. **Fixed Delay**: Constant time between retries
-3. **Exponential Backoff**: Increasing delay between retries
-4. **Exponential Backoff with Jitter**: Random variation in delays
+### Key Components
+1. **Retry Policy**: Rules for when and how to retry
+2. **Backoff Strategy**: Delay calculation between retries
+3. **Circuit Breaker**: Prevents unnecessary retries
+4. **Timeout Management**: Controls operation duration
+5. **Error Classification**: Determines retryable errors
 
-## 💻 Implementation
+## 3. Technical Implementation 💻
 
-### Retry Pattern Implementation
+### 1. Basic Retry Implementation
 
-<Tabs>
-  <TabItem value="java" label="Java">
-    ```java
-    import java.time.Duration;
-    import java.util.concurrent.CompletableFuture;
-    import java.util.function.Supplier;
-    import java.util.Random;
+```python
+from typing import Callable, TypeVar, Optional
+from dataclasses import dataclass
+import time
+import random
+import logging
 
-    public class RetryExecutor {
-        private final int maxAttempts;
-        private final Duration initialDelay;
-        private final Duration maxDelay;
-        private final Random random;
+T = TypeVar('T')
 
-        public RetryExecutor(int maxAttempts, Duration initialDelay, Duration maxDelay) {
-            this.maxAttempts = maxAttempts;
-            this.initialDelay = initialDelay;
-            this.maxDelay = maxDelay;
-            this.random = new Random();
-        }
+@dataclass
+class RetryConfig:
+    max_attempts: int = 3
+    initial_delay: float = 1.0
+    max_delay: float = 60.0
+    exponential_base: float = 2
+    jitter: bool = True
 
-        public <T> CompletableFuture<T> executeWithRetry(Supplier<CompletableFuture<T>> operation) {
-            return executeWithRetry(operation, 1);
-        }
+class RetryableError(Exception):
+    """Base class for retryable errors"""
+    pass
 
-        private <T> CompletableFuture<T> executeWithRetry(
-                Supplier<CompletableFuture<T>> operation, 
-                int attempt) {
-            return operation.get()
-                .thenApply(result -> {
-                    logSuccess(attempt);
-                    return result;
-                })
-                .exceptionally(error -> {
-                    if (attempt >= maxAttempts || !isRetryable(error)) {
-                        throw new RetryException("Max attempts reached or non-retryable error", error);
-                    }
-                    
-                    Duration delay = calculateDelay(attempt);
-                    logRetry(attempt, delay, error);
-                    
-                    return waitAndRetry(operation, attempt + 1, delay);
-                });
-        }
-
-        private <T> T waitAndRetry(
-                Supplier<CompletableFuture<T>> operation, 
-                int nextAttempt, 
-                Duration delay) {
-            try {
-                Thread.sleep(delay.toMillis());
-                return executeWithRetry(operation, nextAttempt).join();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RetryException("Retry interrupted", e);
-            }
-        }
-
-        private Duration calculateDelay(int attempt) {
-            long exponentialDelay = initialDelay.toMillis() * (long) Math.pow(2, attempt - 1);
-            long jitter = (long) (random.nextDouble() * initialDelay.toMillis());
-            
-            return Duration.ofMillis(Math.min(
-                exponentialDelay + jitter, 
-                maxDelay.toMillis()
-            ));
-        }
-
-        private boolean isRetryable(Throwable error) {
-            return error instanceof RetryableException;
-        }
-
-        private void logSuccess(int attempt) {
-            System.out.printf("Operation succeeded on attempt %d%n", attempt);
-        }
-
-        private void logRetry(int attempt, Duration delay, Throwable error) {
-            System.out.printf("Attempt %d failed, retrying in %dms. Error: %s%n",
-                attempt, delay.toMillis(), error.getMessage());
-        }
-    }
-
-    class RetryException extends RuntimeException {
-        public RetryException(String message, Throwable cause) {
-            super(message, cause);
-        }
-    }
-
-    class RetryableException extends RuntimeException {
-        public RetryableException(String message) {
-            super(message);
-        }
-    }
-    ```
-  </TabItem>
-  <TabItem value="go" label="Go">
-    ```go
-    package retry
-
-    import (
-        "context"
-        "errors"
-        "math"
-        "math/rand"
-        "time"
-    )
-
-    type RetryConfig struct {
-        MaxAttempts  int
-        InitialDelay time.Duration
-        MaxDelay     time.Duration
-        OnRetry      func(attempt int, err error)
-    }
-
-    type RetryableOperation func(ctx context.Context) (interface{}, error)
-
-    type Retrier struct {
-        config RetryConfig
-    }
-
-    func NewRetrier(config RetryConfig) *Retrier {
-        return &Retrier{
-            config: config,
-        }
-    }
-
-    func (r *Retrier) Execute(ctx context.Context, operation RetryableOperation) (interface{}, error) {
-        var lastErr error
-
-        for attempt := 1; attempt <= r.config.MaxAttempts; attempt++ {
-            result, err := operation(ctx)
-            if err == nil {
-                return result, nil
-            }
-
-            lastErr = err
-            if !isRetryable(err) {
-                return nil, err
-            }
-
-            if attempt == r.config.MaxAttempts {
-                break
-            }
-
-            delay := r.calculateDelay(attempt)
-            
-            if r.config.OnRetry != nil {
-                r.config.OnRetry(attempt, err)
-            }
-
-            select {
-            case <-ctx.Done():
-                return nil, ctx.Err()
-            case <-time.After(delay):
-                continue
-            }
-        }
-
-        return nil, errors.New("max retry attempts reached: " + lastErr.Error())
-    }
-
-    func (r *Retrier) calculateDelay(attempt int) time.Duration {
-        exponentialDelay := float64(r.config.InitialDelay) * math.Pow(2, float64(attempt-1))
-        jitter := rand.Float64() * float64(r.config.InitialDelay)
+class RetryHandler:
+    def __init__(self, config: RetryConfig = RetryConfig()):
+        self.config = config
+        self.logger = logging.getLogger(__name__)
+    
+    def execute(self, operation: Callable[[], T]) -> T:
+        last_exception = None
         
-        delay := time.Duration(exponentialDelay + jitter)
-        if delay > r.config.MaxDelay {
-            delay = r.config.MaxDelay
-        }
+        for attempt in range(self.config.max_attempts):
+            try:
+                return operation()
+            except RetryableError as e:
+                last_exception = e
+                if attempt == self.config.max_attempts - 1:
+                    raise
+                    
+                delay = self._calculate_delay(attempt)
+                self.logger.warning(f"Operation failed (attempt {attempt + 1}/{self.config.max_attempts}). "
+                                  f"Retrying in {delay:.2f} seconds...")
+                time.sleep(delay)
         
+        raise last_exception if last_exception else RuntimeError("Retry failed")
+    
+    def _calculate_delay(self, attempt: int) -> float:
+        delay = min(
+            self.config.initial_delay * (self.config.exponential_base ** attempt),
+            self.config.max_delay
+        )
+        
+        if self.config.jitter:
+            delay = random.uniform(0, delay)
+            
         return delay
-    }
 
-    func isRetryable(err error) bool {
-        var retryableErr interface {
-            Retryable() bool
+# Usage Example
+def fetch_data(url: str) -> dict:
+    retry_handler = RetryHandler(RetryConfig(max_attempts=3))
+    
+    def operation():
+        response = requests.get(url)
+        if response.status_code == 429:  # Rate limited
+            raise RetryableError("Rate limited")
+        return response.json()
+    
+    return retry_handler.execute(operation)
+```
+
+### 2. Advanced Retry with Circuit Breaker
+
+```python
+from enum import Enum
+from datetime import datetime, timedelta
+from threading import Lock
+
+class CircuitState(Enum):
+    CLOSED = "CLOSED"
+    OPEN = "OPEN"
+    HALF_OPEN = "HALF_OPEN"
+
+class CircuitBreaker:
+    def __init__(self, failure_threshold: int = 5, recovery_time: int = 60):
+        self.failure_threshold = failure_threshold
+        self.recovery_time = recovery_time
+        self.failures = 0
+        self.last_failure_time: Optional[datetime] = None
+        self.state = CircuitState.CLOSED
+        self.lock = Lock()
+        
+    def record_failure(self):
+        with self.lock:
+            self.failures += 1
+            self.last_failure_time = datetime.now()
+            
+            if self.failures >= self.failure_threshold:
+                self.state = CircuitState.OPEN
+    
+    def record_success(self):
+        with self.lock:
+            self.failures = 0
+            self.state = CircuitState.CLOSED
+    
+    def can_execute(self) -> bool:
+        with self.lock:
+            if self.state == CircuitState.CLOSED:
+                return True
+                
+            if self.state == CircuitState.OPEN:
+                if self._should_attempt_recovery():
+                    self.state = CircuitState.HALF_OPEN
+                    return True
+                return False
+                
+            return True  # HALF_OPEN state
+    
+    def _should_attempt_recovery(self) -> bool:
+        if not self.last_failure_time:
+            return True
+            
+        recovery_due_time = self.last_failure_time + timedelta(seconds=self.recovery_time)
+        return datetime.now() >= recovery_due_time
+
+class AdvancedRetryHandler:
+    def __init__(self, 
+                 retry_config: RetryConfig = RetryConfig(),
+                 circuit_breaker: Optional[CircuitBreaker] = None):
+        self.retry_config = retry_config
+        self.circuit_breaker = circuit_breaker or CircuitBreaker()
+        self.logger = logging.getLogger(__name__)
+    
+    def execute(self, operation: Callable[[], T]) -> T:
+        if not self.circuit_breaker.can_execute():
+            raise Exception("Circuit breaker is open")
+        
+        last_exception = None
+        
+        for attempt in range(self.retry_config.max_attempts):
+            try:
+                result = operation()
+                self.circuit_breaker.record_success()
+                return result
+            except RetryableError as e:
+                last_exception = e
+                self.circuit_breaker.record_failure()
+                
+                if attempt == self.retry_config.max_attempts - 1:
+                    raise
+                
+                delay = self._calculate_delay(attempt)
+                self.logger.warning(f"Operation failed (attempt {attempt + 1}/{self.retry_config.max_attempts}). "
+                                  f"Retrying in {delay:.2f} seconds...")
+                time.sleep(delay)
+        
+        raise last_exception if last_exception else RuntimeError("Retry failed")
+```
+
+### 3. Decorators for Retry Logic
+
+```python
+from functools import wraps
+import asyncio
+
+def retry(max_attempts: int = 3, retryable_exceptions: tuple = (Exception,)):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            for attempt in range(max_attempts):
+                try:
+                    return func(*args, **kwargs)
+                except retryable_exceptions as e:
+                    if attempt == max_attempts - 1:
+                        raise
+                    time.sleep(2 ** attempt)
+            return None
+        return wrapper
+    return decorator
+
+def async_retry(max_attempts: int = 3, retryable_exceptions: tuple = (Exception,)):
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            for attempt in range(max_attempts):
+                try:
+                    return await func(*args, **kwargs)
+                except retryable_exceptions as e:
+                    if attempt == max_attempts - 1:
+                        raise
+                    await asyncio.sleep(2 ** attempt)
+            return None
+        return wrapper
+    return decorator
+
+# Usage Example
+@retry(max_attempts=3, retryable_exceptions=(RetryableError,))
+def fetch_data(url: str) -> dict:
+    response = requests.get(url)
+    if response.status_code == 429:
+        raise RetryableError("Rate limited")
+    return response.json()
+```
+
+### 4. Backoff Strategies
+
+```python
+from abc import ABC, abstractmethod
+import random
+
+class BackoffStrategy(ABC):
+    @abstractmethod
+    def get_delay(self, attempt: int) -> float:
+        pass
+
+class FixedBackoff(BackoffStrategy):
+    def __init__(self, delay: float):
+        self.delay = delay
+    
+    def get_delay(self, attempt: int) -> float:
+        return self.delay
+
+class ExponentialBackoff(BackoffStrategy):
+    def __init__(self, initial_delay: float, base: float = 2, max_delay: float = 60):
+        self.initial_delay = initial_delay
+        self.base = base
+        self.max_delay = max_delay
+    
+    def get_delay(self, attempt: int) -> float:
+        delay = self.initial_delay * (self.base ** attempt)
+        return min(delay, self.max_delay)
+
+class DecorrelatedJitterBackoff(BackoffStrategy):
+    def __init__(self, initial_delay: float, max_delay: float = 60):
+        self.initial_delay = initial_delay
+        self.max_delay = max_delay
+    
+    def get_delay(self, attempt: int) -> float:
+        current_delay = min(self.max_delay, self.initial_delay * (2 ** attempt))
+        return random.uniform(self.initial_delay, current_delay)
+```
+
+## 4. Best Practices and Guidelines 📝
+
+### 1. Error Classification
+
+```python
+from enum import Enum
+
+class ErrorCategory(Enum):
+    RETRYABLE = "RETRYABLE"
+    NON_RETRYABLE = "NON_RETRYABLE"
+    TIMEOUT = "TIMEOUT"
+
+class ErrorClassifier:
+    def __init__(self):
+        self.retryable_errors = {
+            ConnectionError,
+            TimeoutError,
+            RetryableError
         }
         
-        if errors.As(err, &retryableErr) {
-            return retryableErr.Retryable()
-        }
+    def classify_error(self, error: Exception) -> ErrorCategory:
+        if isinstance(error, self.retryable_errors):
+            return ErrorCategory.RETRYABLE
+        if isinstance(error, TimeoutError):
+            return ErrorCategory.TIMEOUT
+        return ErrorCategory.NON_RETRYABLE
+```
+
+### 2. Monitoring and Logging
+
+```python
+from dataclasses import dataclass
+from datetime import datetime
+
+@dataclass
+class RetryMetrics:
+    operation_name: str
+    start_time: datetime
+    end_time: datetime
+    attempts: int
+    success: bool
+    final_error: Optional[Exception] = None
+
+class MonitoredRetryHandler:
+    def __init__(self, retry_config: RetryConfig):
+        self.retry_config = retry_config
+        self.metrics: List[RetryMetrics] = []
         
-        return false
-    }
+    def execute(self, operation: Callable[[], T], operation_name: str) -> T:
+        start_time = datetime.now()
+        attempts = 0
+        final_error = None
+        
+        try:
+            result = self._execute_with_retry(operation)
+            success = True
+            return result
+        except Exception as e:
+            success = False
+            final_error = e
+            raise
+        finally:
+            self.metrics.append(RetryMetrics(
+                operation_name=operation_name,
+                start_time=start_time,
+                end_time=datetime.now(),
+                attempts=attempts,
+                success=success,
+                final_error=final_error
+            ))
+```
 
-    // RetryableError implements retryable error interface
-    type RetryableError struct {
-        err error
-    }
+## 5. Anti-Patterns ⚠️
 
-    func NewRetryableError(err error) *RetryableError {
-        return &RetryableError{err: err}
-    }
-
-    func (e *RetryableError) Error() string {
-        return e.err.Error()
-    }
-
-    func (e *RetryableError) Retryable() bool {
-        return true
-    }
-
-    // Usage example:
-    // retrier := NewRetrier(RetryConfig{
-    //     MaxAttempts:  3,
-    //     InitialDelay: time.Second,
-    //     MaxDelay:     time.Second * 10,
-    //     OnRetry: func(attempt int, err error) {
-    //         log.Printf("Retry attempt %d failed: %v", attempt, err)
-    //     },
-    // })
-    ```
-  </TabItem>
-</Tabs>
-
-## 🤝 Related Patterns
-
-1. **Circuit Breaker Pattern**
-    - Prevents retries when service is down
-    - Works with Retry to handle temporary failures
-
-2. **Fallback Pattern**
-    - Provides alternative when retries fail
-    - Ensures graceful degradation
-
-3. **Timeout Pattern**
-    - Sets boundaries for retry attempts
-    - Prevents infinite retry loops
-
-## 🎯 Best Practices
-
-### Configuration
-- Set appropriate retry counts
-- Use exponential backoff with jitter
-- Configure reasonable timeout values
-- Define clear retry criteria
-
-### Monitoring
-- Log retry attempts and failures
-- Track retry success rates
-- Monitor overall latency
-- Alert on excessive retries
-
-### Testing
-- Test various failure scenarios
-- Verify backoff behavior
-- Simulate transient failures
-- Check timeout handling
-
-## ⚠️ Common Pitfalls
+### Common Mistakes
 
 1. **Infinite Retries**
-    - *Problem*: No maximum retry limit
-    - *Solution*: Always set max retry count
+```python
+# ❌ Bad: No maximum retry limit
+def bad_retry(operation):
+    while True:
+        try:
+            return operation()
+        except Exception:
+            time.sleep(1)
 
-2. **Retry Storms**
-    - *Problem*: Many services retrying simultaneously
-    - *Solution*: Use jitter in backoff
+# ✅ Good: Limited retries
+def good_retry(operation, max_attempts=3):
+    for attempt in range(max_attempts):
+        try:
+            return operation()
+        except Exception as e:
+            if attempt == max_attempts - 1:
+                raise
+            time.sleep(2 ** attempt)
+```
 
-3. **Retrying Non-Retryable Errors**
-    - *Problem*: Retrying permanent failures
-    - *Solution*: Properly categorize errors
+2. **Missing Timeout**
+```python
+# ❌ Bad: No timeout
+def bad_retry_request(url: str):
+    return requests.get(url)
 
-## 🎉 Use Cases
+# ✅ Good: With timeout
+def good_retry_request(url: str, timeout: float = 5.0):
+    return requests.get(url, timeout=timeout)
+```
 
-### 1. Database Operations
-- Handle temporary connection losses
-- Manage deadlocks
-- Deal with transient failures
+## 6. Testing Strategies 🧪
 
-### 2. Network Requests
-- Handle network timeouts
-- Manage service unavailability
-- Deal with rate limiting
+### Unit Testing
 
-### 3. Message Queue Processing
-- Handle queue connectivity issues
-- Manage message processing failures
-- Deal with temporary service outages
+```python
+import pytest
+from unittest.mock import Mock, patch
 
-## 🔍 Deep Dive Topics
+class TestRetryHandler:
+    @pytest.fixture
+    def handler(self):
+        return RetryHandler(RetryConfig(max_attempts=3))
+    
+    def test_successful_operation(self, handler):
+        operation = Mock(return_value="success")
+        result = handler.execute(operation)
+        assert result == "success"
+        assert operation.call_count == 1
+    
+    def test_retry_on_failure(self, handler):
+        operation = Mock(side_effect=[RetryableError(), RetryableError(), "success"])
+        result = handler.execute(operation)
+        assert result == "success"
+        assert operation.call_count == 3
+    
+    def test_max_retries_exceeded(self, handler):
+        operation = Mock(side_effect=RetryableError())
+        with pytest.raises(RetryableError):
+            handler.execute(operation)
+        assert operation.call_count == 3
+```
 
-### Thread Safety
-- Ensure thread-safe retry counters
-- Handle concurrent retries
-- Manage shared resources
+### Integration Testing
 
-### Distributed Systems Considerations
-- Consider cascading failures
-- Handle distributed timeouts
-- Manage cross-service dependencies
+```python
+import aiohttp
+import asyncio
 
-### Performance Optimization
-- Minimize retry overhead
-- Optimize backoff strategies
-- Balance retry attempts with system load
+async def test_retry_with_real_service():
+    async with aiohttp.ClientSession() as session:
+        handler = RetryHandler()
+        
+        async def operation():
+            async with session.get('http://api.example.com/data') as response:
+                if response.status == 429:
+                    raise RetryableError("Rate limited")
+                return await response.json()
+        
+        try:
+            result = await handler.execute(operation)
+            assert result is not None
+        except Exception as e:
+            assert isinstance(e, RetryableError)
+```
 
-## 📚 Additional Resources
+## 7. Performance Considerations ⚡
 
-### References
-1. "Patterns of Enterprise Application Architecture" by Martin Fowler
-2. AWS Well-Architected Framework
-3. Microsoft Azure Architecture Guide
+### Optimization Techniques
 
-### Tools
-- Resilience4j Retry module
-- Spring Retry
-- Go-Retry library
-
-## ❓ FAQs
-
-**Q: How many retry attempts should I configure?**
-A: Start with 3-5 attempts. Adjust based on operation criticality and failure patterns.
-
-**Q: When should I not use retries?**
-A: Don't retry on validation errors, authentication failures, or other permanent errors.
-
-**Q: How do I handle partial success scenarios?**
-A: Implement idempotency and track operation state to handle partial completions.
-
-**Q: Should I use the same retry policy for all operations?**
-A: No, customize retry policies based on operation characteristics and requirements.
-
-**Q: How do I prevent retry storms?**
-A: Use exponential backoff with jitter and consider circuit breakers for widespread issues.
+1. **Adaptive Retry Delays**
+```python
+class AdaptiveBackoff(BackoffStrategy):
+    def __init__(self, initial_delay: float, max_delay: float = 60):
+        self.initial_delay = initial_delay
+        self.max_delay = max_delay
+        self.success_rate = 1.0
+        
+    def get_delay(self, attempt: int) -> float:
+        base_delay = self.initial_delay * (2 ** attempt)
+        adjusted_delay = base_delay * (1 / self.success_rate)
+        return min(adjusted_delay, self.max_delay)
+    
+    def update_success_rate(self, success: bool):
+        alpha = 0.1  # Learning rate
+        self.success_rate = (1 - alpha) * self.success_rate + alpha * (1 if success else 0)
+```

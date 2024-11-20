@@ -3,465 +3,420 @@ sidebar_position: 4
 title: "Factory Pattern"
 description: "Clean Architecture Layers - Factory Pattern"
 ---
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-
 # 🏭 Factory Pattern in Clean Architecture
 
-## Overview
+## 1. Overview and Purpose
 
-The Factory Pattern is a creational pattern that provides an interface for creating objects without specifying their exact classes. In Clean Architecture, factories are crucial for maintaining dependency rules and ensuring proper object creation across architectural boundaries.
+### Definition
+The Factory Pattern is a creational pattern that provides an interface for creating objects without explicitly specifying their exact classes, maintaining clean architecture principles by encapsulating object creation logic.
 
-### Real World Analogy
-Think of a car manufacturing plant. When you order a car, you don't need to know how to assemble each component. The factory handles all the complexity of creation, providing you with a complete car based on your specifications. Similarly, software factories create complex objects while hiding the creation details from the client code.
+### Problems Solved
+- Complex object creation
+- Dependency management
+- Testing complexity
+- Configuration flexibility
+- Implementation details isolation
 
-## 🎯 Key Concepts
+### Business Value
+- Improved maintainability
+- Enhanced testability
+- Reduced coupling
+- Flexible object creation
+- Better separation of concerns
 
-### Component Structure
+## 2. 🏗️ Factory Pattern Types
 
 ```mermaid
 graph TD
-    A[Factory Interface] --> B[Concrete Factory]
-    B --> C[Product Interface]
-    B --> D[Concrete Product A]
-    B --> E[Concrete Product B]
-    F[Client] --> A
-    style A fill:#bbf,stroke:#333
-    style C fill:#dfd,stroke:#333
+    A[Factory Pattern Types] --> B[Simple Factory]
+    A --> C[Factory Method]
+    A --> D[Abstract Factory]
+    
+    B --> E[Static Creation Method]
+    B --> F[Instance Creation Method]
+    
+    C --> G[Interface/Abstract Class]
+    C --> H[Concrete Implementations]
+    
+    D --> I[Product Families]
+    D --> J[Related Objects]
+    
+    style A fill:#f9f,stroke:#333,stroke-width:2px
+    style B fill:#bbf,stroke:#333,stroke-width:2px
+    style C fill:#dfd,stroke:#333,stroke-width:2px
+    style D fill:#ffd,stroke:#333,stroke-width:2px
 ```
 
-### Types of Factories
+## 3. 💻 Implementation Examples
 
-1. **Simple Factory**
-    - Basic object creation
-    - Single creation method
-    - No interface required
+### Simple Factory
 
-2. **Factory Method**
-    - Creation through inheritance
-    - Subclasses decide the class
-    - Template method pattern
-
-3. **Abstract Factory**
-    - Family of related objects
-    - Multiple factory methods
-    - Complete abstraction
-
-## 💻 Implementation
-
-### Payment Processing Factory Example
-
-<Tabs>
-  <TabItem value="java" label="Java">
 ```java
-// Domain Models
-package com.example.domain.model;
+// Domain Entity
+public class Order {
+    private final OrderId id;
+    private final CustomerId customerId;
+    private final List<OrderItem> items;
+    private OrderStatus status;
 
-public interface PaymentProcessor {
-TransactionResult process(PaymentRequest request);
-void validate(PaymentRequest request);
-boolean supports(PaymentMethod method);
-}
-
-public interface PaymentProcessorFactory {
-PaymentProcessor createProcessor(PaymentMethod method);
-}
-
-// Factory Implementation
-package com.example.infrastructure.factory;
-
-@Component
-public class PaymentProcessorFactoryImpl implements PaymentProcessorFactory {
-private final Map<PaymentMethod, PaymentProcessor> processors;
-private final MetricsService metricsService;
-private final ConfigurationService configService;
-
-    public PaymentProcessorFactoryImpl(
-            List<PaymentProcessor> availableProcessors,
-            MetricsService metricsService,
-            ConfigurationService configService) {
-        this.processors = availableProcessors.stream()
-            .collect(Collectors.toMap(
-                processor -> processor.getMethod(),
-                processor -> processor
-            ));
-        this.metricsService = metricsService;
-        this.configService = configService;
+    // Private constructor ensures factory usage
+    private Order(OrderId id, CustomerId customerId, List<OrderItem> items) {
+        this.id = id;
+        this.customerId = customerId;
+        this.items = new ArrayList<>(items);
+        this.status = OrderStatus.CREATED;
     }
-    
+
+    // Factory method
+    public static Order create(CustomerId customerId, List<OrderItem> items) {
+        validateItems(items);
+        return new Order(OrderId.generate(), customerId, items);
+    }
+
+    private static void validateItems(List<OrderItem> items) {
+        if (items == null || items.isEmpty()) {
+            throw new InvalidOrderException("Order must have at least one item");
+        }
+    }
+}
+
+// Factory class
+public class OrderFactory {
+    public Order createOrder(CreateOrderRequest request) {
+        List<OrderItem> items = createOrderItems(request.getItems());
+        return Order.create(request.getCustomerId(), items);
+    }
+
+    private List<OrderItem> createOrderItems(List<OrderItemRequest> requests) {
+        return requests.stream()
+            .map(this::createOrderItem)
+            .collect(Collectors.toList());
+    }
+
+    private OrderItem createOrderItem(OrderItemRequest request) {
+        return new OrderItem(
+            new ProductId(request.getProductId()),
+            Money.of(request.getAmount()),
+            request.getQuantity()
+        );
+    }
+}
+```
+
+### Factory Method Pattern
+
+```java
+// Abstract Factory Method in Domain Layer
+public interface PaymentProcessorFactory {
+    PaymentProcessor createProcessor(PaymentMethod method);
+}
+
+// Concrete Factory in Infrastructure Layer
+public class PaymentProcessorFactoryImpl implements PaymentProcessorFactory {
+    private final StripeClient stripeClient;
+    private final PayPalClient paypalClient;
+    private final BankTransferClient bankClient;
+
     @Override
     public PaymentProcessor createProcessor(PaymentMethod method) {
-        PaymentProcessor baseProcessor = processors.get(method);
-        if (baseProcessor == null) {
-            throw new UnsupportedPaymentMethodException(method);
-        }
-        
-        // Enhance processor with cross-cutting concerns
-        return new PaymentProcessorDecorator(
-            baseProcessor,
-            metricsService,
-            configService
-        );
+        return switch (method) {
+            case CREDIT_CARD -> new StripePaymentProcessor(stripeClient);
+            case PAYPAL -> new PayPalPaymentProcessor(paypalClient);
+            case BANK_TRANSFER -> new BankTransferProcessor(bankClient);
+            default -> throw new UnsupportedPaymentMethodException(method);
+        };
     }
 }
 
-// Concrete Implementation
-@Component
-public class CreditCardProcessor implements PaymentProcessor {
-private final PaymentGateway gateway;
-private final PaymentValidator validator;
+// Usage in Use Case
+public class ProcessPaymentUseCase {
+    private final PaymentProcessorFactory processorFactory;
+    private final PaymentRepository paymentRepository;
 
-    public CreditCardProcessor(
-            PaymentGateway gateway,
-            PaymentValidator validator) {
-        this.gateway = gateway;
-        this.validator = validator;
-    }
-    
-    @Override
-    public TransactionResult process(PaymentRequest request) {
-        validate(request);
-        return gateway.processPayment(request);
-    }
-    
-    @Override
-    public void validate(PaymentRequest request) {
-        validator.validateCreditCard(request);
-    }
-    
-    @Override
-    public boolean supports(PaymentMethod method) {
-        return PaymentMethod.CREDIT_CARD.equals(method);
-    }
-}
-
-// Abstract Factory Example
-public interface PaymentComponentFactory {
-PaymentProcessor createProcessor();
-PaymentValidator createValidator();
-PaymentGateway createGateway();
-}
-
-@Component
-public class CreditCardComponentFactory implements PaymentComponentFactory {
-private final Configuration config;
-
-    @Override
-    public PaymentProcessor createProcessor() {
-        return new CreditCardProcessor(
-            createGateway(),
-            createValidator()
-        );
-    }
-    
-    @Override
-    public PaymentValidator createValidator() {
-        return new CreditCardValidator(config);
-    }
-    
-    @Override
-    public PaymentGateway createGateway() {
-        return new CreditCardGateway(config);
+    public PaymentResult execute(Payment payment) {
+        PaymentProcessor processor = processorFactory.createProcessor(payment.getMethod());
+        PaymentResult result = processor.process(payment);
+        paymentRepository.save(payment);
+        return result;
     }
 }
 ```
-  </TabItem>
-  <TabItem value="go" label="Go">
-```go
-// Domain Models
-package domain
 
-type PaymentProcessor interface {
-    Process(request *PaymentRequest) (*TransactionResult, error)
-    Validate(request *PaymentRequest) error
-    Supports(method PaymentMethod) bool
+### Abstract Factory Pattern
+
+```java
+// Abstract Factory Interface
+public interface NotificationFactory {
+    NotificationSender createSender();
+    NotificationTemplate createTemplate();
+    NotificationFormatter createFormatter();
 }
 
-type PaymentProcessorFactory interface {
-    CreateProcessor(method PaymentMethod) (PaymentProcessor, error)
-}
-
-// Factory Implementation
-package infrastructure
-
-type PaymentProcessorFactoryImpl struct {
-    processors     map[PaymentMethod]PaymentProcessor
-    metricsService MetricsService
-    configService  ConfigurationService
-}
-
-func NewPaymentProcessorFactory(
-    availableProcessors []PaymentProcessor,
-    metricsService MetricsService,
-    configService ConfigurationService) PaymentProcessorFactory {
-    
-    processors := make(map[PaymentMethod]PaymentProcessor)
-    for _, p := range availableProcessors {
-        processors[p.Method()] = p
+// Concrete Factories
+public class EmailNotificationFactory implements NotificationFactory {
+    @Override
+    public NotificationSender createSender() {
+        return new EmailSender();
     }
-    
-    return &PaymentProcessorFactoryImpl{
-        processors:     processors,
-        metricsService: metricsService,
-        configService:  configService,
+
+    @Override
+    public NotificationTemplate createTemplate() {
+        return new EmailTemplate();
+    }
+
+    @Override
+    public NotificationFormatter createFormatter() {
+        return new HTMLFormatter();
     }
 }
 
-func (f *PaymentProcessorFactoryImpl) CreateProcessor(
-    method PaymentMethod) (PaymentProcessor, error) {
-    
-    processor, exists := f.processors[method]
-    if !exists {
-        return nil, fmt.Errorf("unsupported payment method: %v", method)
+public class SMSNotificationFactory implements NotificationFactory {
+    @Override
+    public NotificationSender createSender() {
+        return new SMSSender();
     }
-    
-    // Enhance processor with cross-cutting concerns
-    return NewPaymentProcessorDecorator(
-        processor,
-        f.metricsService,
-        f.configService,
-    ), nil
-}
 
-// Concrete Implementation
-type CreditCardProcessor struct {
-    gateway   PaymentGateway
-    validator PaymentValidator
-}
+    @Override
+    public NotificationTemplate createTemplate() {
+        return new SMSTemplate();
+    }
 
-func NewCreditCardProcessor(
-    gateway PaymentGateway,
-    validator PaymentValidator) *CreditCardProcessor {
-    
-    return &CreditCardProcessor{
-        gateway:   gateway,
-        validator: validator,
+    @Override
+    public NotificationFormatter createFormatter() {
+        return new PlainTextFormatter();
     }
 }
 
-func (p *CreditCardProcessor) Process(
-    request *PaymentRequest) (*TransactionResult, error) {
-    
-    if err := p.Validate(request); err != nil {
-        return nil, err
+// Usage in Use Case
+public class SendNotificationUseCase {
+    private final NotificationFactory notificationFactory;
+
+    public void execute(NotificationRequest request) {
+        NotificationSender sender = notificationFactory.createSender();
+        NotificationTemplate template = notificationFactory.createTemplate();
+        NotificationFormatter formatter = notificationFactory.createFormatter();
+
+        String content = template.generate(request.getData());
+        String formattedContent = formatter.format(content);
+        sender.send(request.getRecipient(), formattedContent);
     }
-    return p.gateway.ProcessPayment(request)
-}
-
-func (p *CreditCardProcessor) Validate(
-    request *PaymentRequest) error {
-    return p.validator.ValidateCreditCard(request)
-}
-
-func (p *CreditCardProcessor) Supports(
-    method PaymentMethod) bool {
-    return method == PaymentMethodCreditCard
-}
-
-// Abstract Factory Example
-type PaymentComponentFactory interface {
-    CreateProcessor() PaymentProcessor
-    CreateValidator() PaymentValidator
-    CreateGateway() PaymentGateway
-}
-
-type CreditCardComponentFactory struct {
-    config Configuration
-}
-
-func NewCreditCardComponentFactory(
-    config Configuration) *CreditCardComponentFactory {
-    return &CreditCardComponentFactory{config: config}
-}
-
-func (f *CreditCardComponentFactory) CreateProcessor() PaymentProcessor {
-    return NewCreditCardProcessor(
-        f.CreateGateway(),
-        f.CreateValidator(),
-    )
-}
-
-func (f *CreditCardComponentFactory) CreateValidator() PaymentValidator {
-    return NewCreditCardValidator(f.config)
-}
-
-func (f *CreditCardComponentFactory) CreateGateway() PaymentGateway {
-    return NewCreditCardGateway(f.config)
 }
 ```
-  </TabItem>
-</Tabs>
 
-## 🔄 Related Patterns
+## 4. 🔄 Clean Architecture Integration
 
-1. **Builder Pattern**
-    - Complements Factory for complex object creation
-    - Handles step-by-step construction
-    - Provides fine-grained control
-
-2. **Dependency Injection**
-    - Works with factories for object creation
-    - Manages dependencies
-    - Supports testing
-
-3. **Strategy Pattern**
-    - Often created by factories
-    - Provides runtime behavior selection
-    - Supports extensibility
-
-## ✅ Best Practices
-
-### Configuration
-1. Use dependency injection for factory dependencies
-2. Externalize configuration
-3. Implement proper validation
-4. Use builders for complex objects
-
-### Monitoring
-1. Track object creation metrics
-2. Monitor factory performance
-3. Log creation failures
-4. Implement health checks
-
-### Testing
-1. Mock factory outputs
-2. Test all creation paths
-3. Verify validation rules
-4. Use test doubles
-
-## ⚠️ Common Pitfalls
-
-1. **Complex Factories**
-    - Symptom: Too many creation methods
-    - Solution: Split into specialized factories
-
-2. **Tight Coupling**
-    - Symptom: Direct instantiation in factory
-    - Solution: Use dependency injection
-
-3. **Missing Validation**
-    - Symptom: Invalid objects created
-    - Solution: Implement validation in factory
-
-4. **Hidden Dependencies**
-    - Symptom: Objects need post-creation setup
-    - Solution: Use proper initialization in factory
-
-## 🎯 Use Cases
-
-### 1. Payment Processing System
+### Factory Location in Clean Architecture
 
 ```mermaid
 graph TD
-    A[Payment Factory] --> B[Credit Card Processor]
-    A --> C[PayPal Processor]
-    A --> D[Bank Transfer Processor]
-    B --> E[Payment Gateway]
+    A[Entities Layer] --> B[Factory Interfaces]
+    B --> C[Use Cases Layer]
+    C --> D[Interface Adapters]
+    D --> E[Concrete Factories]
+    
+    style A fill:#f5d6a8,stroke:#333,stroke-width:2px
+    style B fill:#a8d1f5,stroke:#333,stroke-width:2px
+    style C fill:#b8f5a8,stroke:#333,stroke-width:2px
+    style D fill:#f5a8e8,stroke:#333,stroke-width:2px
 ```
 
-### 2. Document Generation System
-- Multiple document formats
-- Format-specific processing
-- Configurable templates
+### Implementation Example
 
-### 3. Connection Pool Management
-- Database connections
-- Connection configuration
-- Pool metrics
-
-## 🔍 Deep Dive Topics
-
-### Thread Safety
-
-1. **Thread-Safe Factory**
 ```java
-@ThreadSafe
-public class ConcurrentFactory {
-    private final ConcurrentMap<String, Object> cache
-        = new ConcurrentHashMap<>();
-    
-    public Object getInstance(String key) {
-        return cache.computeIfAbsent(key, this::createInstance);
+// Domain Layer - Entity Factory Interface
+public interface UserFactory {
+    User createUser(String email, String name, String password);
+    User reconstitute(UserId id, String email, String name, String hashedPassword);
+}
+
+// Infrastructure Layer - Concrete Factory
+public class DefaultUserFactory implements UserFactory {
+    private final PasswordEncoder passwordEncoder;
+
+    @Override
+    public User createUser(String email, String name, String password) {
+        return new User(
+            UserId.generate(),
+            new Email(email),
+            new Name(name),
+            passwordEncoder.encode(password)
+        );
+    }
+
+    @Override
+    public User reconstitute(UserId id, String email, String name, String hashedPassword) {
+        return new User(
+            id,
+            new Email(email),
+            new Name(name),
+            Password.fromHash(hashedPassword)
+        );
+    }
+}
+
+// Use Case Layer
+public class CreateUserUseCase {
+    private final UserFactory userFactory;
+    private final UserRepository userRepository;
+
+    public UserId execute(CreateUserRequest request) {
+        User user = userFactory.createUser(
+            request.getEmail(),
+            request.getName(),
+            request.getPassword()
+        );
+        
+        userRepository.save(user);
+        return user.getId();
     }
 }
 ```
 
-2. **Object Pool Factory**
+## 5. 🧪 Testing with Factories
+
+### Test Factories
+
 ```java
-public class PooledObjectFactory {
-    private final ObjectPool<Resource> pool;
-    
-    public Resource acquire() {
-        return pool.borrowObject();
+// Test Factory
+public class TestUserFactory implements UserFactory {
+    @Override
+    public User createUser(String email, String name, String password) {
+        return new User(
+            UserId.generate(),
+            new Email(email),
+            new Name(name),
+            Password.fromRaw(password)
+        );
     }
+
+    public User createDefaultUser() {
+        return createUser("test@example.com", "Test User", "password123");
+    }
+}
+
+// Test Examples
+public class UserUseCaseTest {
+    private TestUserFactory userFactory;
     
-    public void release(Resource resource) {
-        pool.returnObject(resource);
+    @Test
+    void shouldCreateUser() {
+        // Arrange
+        User user = userFactory.createDefaultUser();
+        
+        // Act
+        userRepository.save(user);
+        
+        // Assert
+        assertTrue(userRepository.findById(user.getId()).isPresent());
     }
 }
 ```
 
-### Performance
+## 6. 🎯 Best Practices
 
-1. **Lazy Initialization**
+### Factory Design Guidelines
+
+1. **Keep Factories Focused**
 ```java
-public class LazyFactory {
-    private volatile Resource instance;
-    
-    public Resource getInstance() {
-        if (instance == null) {
-            synchronized (this) {
-                if (instance == null) {
-                    instance = createResource();
-                }
-            }
+// Good: Single responsibility
+public interface OrderFactory {
+    Order createOrder(CustomerId customerId, List<OrderItem> items);
+    Order reconstitute(OrderId id, CustomerId customerId, List<OrderItem> items, OrderStatus status);
+}
+
+// Bad: Mixed responsibilities
+public interface OrderFactory {
+    Order createOrder(CustomerId customerId, List<OrderItem> items);
+    void processOrder(Order order);  // Should be in a use case
+    OrderStatus checkStatus(OrderId id);  // Should be in a repository
+}
+```
+
+2. **Use Factory Methods for Validation**
+```java
+public class PaymentFactory {
+    public Payment createPayment(CreatePaymentRequest request) {
+        validateAmount(request.getAmount());
+        validateCurrency(request.getCurrency());
+        
+        return new Payment(
+            PaymentId.generate(),
+            Money.of(request.getAmount(), request.getCurrency()),
+            request.getPaymentMethod()
+        );
+    }
+
+    private void validateAmount(BigDecimal amount) {
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new InvalidPaymentException("Amount must be greater than zero");
         }
-        return instance;
     }
 }
 ```
 
-2. **Caching Factory**
+3. **Factory Method Naming**
 ```java
-public class CachingFactory {
-    private final LoadingCache<String, Object> cache;
-    
-    public Object getInstance(String key) {
-        return cache.get(key);
+public interface DocumentFactory {
+    // Clear, intention-revealing names
+    Document createBlankDocument();
+    Document createFromTemplate(TemplateId templateId);
+    Document reconstitute(DocumentId id, byte[] content);
+}
+```
+
+## 7. 🚫 Anti-patterns
+
+### Common Mistakes to Avoid
+
+1. **Exposing Implementation Details**
+```java
+// Wrong: Exposing database details
+public class UserFactory {
+    public User createUser(UserEntity entity) {  // Depends on infrastructure
+        return new User(entity.getId(), entity.getEmail());
+    }
+}
+
+// Better: Pure domain factory
+public class UserFactory {
+    public User createUser(UserId id, Email email) {
+        return new User(id, email);
     }
 }
 ```
 
-## 📚 Additional Resources
+2. **Complex Factory Logic**
+```java
+// Wrong: Too much logic in factory
+public class OrderFactory {
+    public Order createOrder(CreateOrderRequest request) {
+        processPayment(request);  // Should be in use case
+        updateInventory(request); // Should be in use case
+        notifyCustomer(request);  // Should be in use case
+        return new Order(/*...*/);
+    }
+}
+
+// Better: Factory focuses on creation
+public class OrderFactory {
+    public Order createOrder(CreateOrderRequest request) {
+        validateRequest(request);
+        return new Order(
+            OrderId.generate(),
+            request.getCustomerId(),
+            createOrderItems(request.getItems())
+        );
+    }
+}
+```
+
+## 8. 📚 References
 
 ### Books
-1. "Design Patterns" by Gang of Four
-2. "Clean Architecture" by Robert C. Martin
-3. "Effective Java" by Joshua Bloch
+- "Clean Architecture" by Robert C. Martin
+- "Design Patterns" by Gang of Four
+- "Implementing Domain-Driven Design" by Vaughn Vernon
 
-### Tools
-1. Spring Framework
-2. Google Guice
-3. Factory Boy (Testing)
-4. JUnit/TestNG
-
-### References
-1. [Refactoring Guru - Factory Pattern](https://refactoring.guru/design-patterns/factory-method)
-2. [Martin Fowler - Factory Pattern](https://martinfowler.com/articles/injection.html)
-
-## ❓ FAQs
-
-### Q: When should I use Factory vs Direct Construction?
-A: Use Factory when creation logic is complex or might change, or when you need to maintain abstractions.
-
-### Q: How do I handle factory errors?
-A: Use custom exceptions and proper validation in the factory methods.
-
-### Q: Should factories be stateless?
-A: Generally yes, though caching factories may maintain state.
-
-### Q: How to handle dependency injection in factories?
-A: Inject dependencies into the factory and let it pass them to created objects.
-
-### Q: When should I use Abstract Factory vs Factory Method?
-A: Use Abstract Factory when you need to create families of related objects.
+### Articles
+- [Factory Pattern in Clean Architecture](https://blog.cleancoder.com/uncle-bob/2016/01/04/ALittleArchitecture.html)
+- [Factory Method Pattern](https://refactoring.guru/design-patterns/factory-method)

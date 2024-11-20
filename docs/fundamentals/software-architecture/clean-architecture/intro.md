@@ -3,292 +3,458 @@ sidebar_position: 1
 title: "Clean Architecture Introduction"
 description: "Clean Architecture Intro"
 ---
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
 
-# Clean Architecture Introduction 🏗️
+# 🏛️ Introduction to Clean Architecture
 
-## Overview
+## 1. Overview and Problem Statement
 
-Clean Architecture is a software design philosophy that emphasizes separation of concerns through layers, making systems more maintainable, scalable, and testable.
+### Definition
+Clean Architecture is a software design philosophy that separates concerns into concentric layers, emphasizing independence of business rules from frameworks, databases, and interface details. It was introduced by Robert C. Martin ("Uncle Bob") and builds upon earlier layered architecture patterns.
 
-**Real-World Analogy:**
-Think of a well-designed city. The city has clear zones: residential areas, commercial districts, industrial zones, and a city center. Each zone has its specific purpose, and changes in one zone don't necessarily affect others. Clean Architecture works similarly, organizing code into concentric layers, each with its own responsibilities.
+### Problems Solved
+- Coupling to frameworks and technologies
+- Difficulty in testing
+- Mixed business and technical concerns
+- Complex maintenance and evolution
+- Dependency management challenges
+- System comprehension and navigation
 
-## Key Concepts 🔑
+### Business Value
+- Reduced long-term maintenance costs
+- Easier technology migrations
+- Improved testability
+- Better team organization
+- Faster onboarding
+- Enhanced system longevity
 
-### Core Principles
+## 2. 🏗️ Architectural Layers
 
-1. **Independence of Frameworks**: The architecture doesn't depend on the existence of some library or framework
-2. **Testability**: Business rules can be tested without UI, database, web server, or any external element
-3. **Independence of UI**: The UI can change without changing the rest of the system
-4. **Independence of Database**: Business rules aren't bound to the database
-5. **Independence of External Agency**: Business rules don't know anything about outside world
+```mermaid
+graph TD
+    A[External Interfaces<br/>Web, UI, DB] --> B[Interface Adapters<br/>Controllers, Presenters]
+    B --> C[Application Business Rules<br/>Use Cases]
+    C --> D[Enterprise Business Rules<br/>Entities]
+    
+    style A fill:#f9f,stroke:#333,stroke-width:2px
+    style B fill:#bbf,stroke:#333,stroke-width:2px
+    style C fill:#dfd,stroke:#333,stroke-width:2px
+    style D fill:#ffd,stroke:#333,stroke-width:2px
+```
 
-### Layers (from inside out)
+### Core Layers
 
 1. **Entities** (Enterprise Business Rules)
-    - Encapsulate enterprise-wide business rules
-    - Can be used by different applications in the enterprise
+   - Core business rules
+   - Pure domain objects
+   - Framework independent
+   - Highest level abstractions
 
 2. **Use Cases** (Application Business Rules)
-    - Contains application-specific business rules
-    - Orchestrates the flow of data to and from entities
+   - Application-specific business rules
+   - Orchestration of entities
+   - Implementation of business operations
+   - Pure business logic
 
 3. **Interface Adapters**
-    - Converts data between use cases/entities and external formats
-    - Contains presenters, controllers, and gateways
+   - Controllers
+   - Presenters
+   - Gateways
+   - Data transformers
 
 4. **Frameworks & Drivers**
-    - Contains frameworks and tools
-    - Database, web framework, devices, UI, external interfaces
+   - Web frameworks
+   - Databases
+   - UI components
+   - External services
 
-## Implementation Examples
+## 3. 💻 Implementation Example
 
-Here's a basic example of implementing Clean Architecture in both Java and Go:
+### Domain Entity Layer
 
-<Tabs>
-  <TabItem value="java" label="Java">
+```java
+// Core domain entity - most stable, innermost layer
+public class User {
+    private final UserId id;
+    private Email email;
+    private Name name;
+    private Password password;
+
+    public User(UserId id, Email email, Name name, Password password) {
+        this.id = id;
+        this.email = email;
+        this.name = name;
+        this.password = password;
+    }
+
+    public void updateEmail(Email newEmail) {
+        // Business rule: Email format validation
+        if (!newEmail.isValid()) {
+            throw new InvalidEmailException();
+        }
+        this.email = newEmail;
+    }
+
+    // Domain behavior methods
+    public boolean authenticate(Password password) {
+        return this.password.matches(password);
+    }
+}
+
+// Value Objects
+public record Email(String value) {
+    public Email {
+        if (!isValid(value)) {
+            throw new InvalidEmailException(value);
+        }
+    }
+
+    public boolean isValid() {
+        return value != null && 
+               value.matches("^[A-Za-z0-9+_.-]+@(.+)$");
+    }
+}
+```
+
+### Use Case Layer
+
+```java
+// Use case implementation
+public class CreateUserUseCase implements CreateUser {
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final UserPresenter presenter;
+
+    public CreateUserUseCase(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            UserPresenter presenter) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.presenter = presenter;
+    }
+
+    @Override
+    public void execute(CreateUserRequest request) {
+        // 1. Business rules validation
+        validateRequest(request);
+
+        // 2. Create domain entity
+        User user = new User(
+            new UserId(),
+            new Email(request.getEmail()),
+            new Name(request.getName()),
+            passwordEncoder.encode(request.getPassword())
+        );
+
+        // 3. Persist entity
+        try {
+            userRepository.save(user);
+            presenter.presentSuccess(new CreateUserResponse(user));
+        } catch (Exception e) {
+            presenter.presentError(e);
+        }
+    }
+}
+
+// Use case boundary
+public interface CreateUser {
+    void execute(CreateUserRequest request);
+}
+
+// Input/Output data structures
+public record CreateUserRequest(
+    String email,
+    String name,
+    String password
+) {}
+
+public record CreateUserResponse(
+    String id,
+    String email,
+    String name
+) {}
+```
+
+### Interface Adapters Layer
+
+```java
+// Controller
+@RestController
+public class UserController {
+    private final CreateUser createUser;
+    private final GetUser getUser;
+
+    public UserController(CreateUser createUser, GetUser getUser) {
+        this.createUser = createUser;
+        this.getUser = getUser;
+    }
+
+    @PostMapping("/users")
+    public ResponseEntity<CreateUserResponse> createUser(@RequestBody CreateUserRequest request) {
+        return createUserUseCase.execute(request);
+    }
+}
+
+// Repository Interface (in domain)
+public interface UserRepository {
+    User save(User user);
+    Optional<User> findById(UserId id);
+    void delete(UserId id);
+}
+
+// Repository Implementation (in infrastructure)
+@Repository
+public class JpaUserRepository implements UserRepository {
+    private final JpaUserEntityRepository jpaRepository;
+    private final UserMapper mapper;
+
+    @Override
+    public User save(User user) {
+        UserEntity entity = mapper.toEntity(user);
+        UserEntity saved = jpaRepository.save(entity);
+        return mapper.toDomain(saved);
+    }
+}
+```
+
+### Infrastructure Layer
+
+```java
+// Database Entity
+@Entity
+@Table(name = "users")
+public class UserEntity {
+    @Id
+    private String id;
+    
+    @Column(unique = true)
+    private String email;
+    
+    private String name;
+    private String passwordHash;
+    
+    // JPA required
+    protected UserEntity() {}
+    
+    // Constructor and getters
+}
+
+// Mapper between domain and persistence
+public class UserMapper {
+    public UserEntity toEntity(User user) {
+        return new UserEntity(
+            user.getId().toString(),
+            user.getEmail().value(),
+            user.getName().value(),
+            user.getPassword().hash()
+        );
+    }
+    
+    public User toDomain(UserEntity entity) {
+        return new User(
+            new UserId(entity.getId()),
+            new Email(entity.getEmail()),
+            new Name(entity.getName()),
+            Password.fromHash(entity.getPasswordHash())
+        );
+    }
+}
+```
+
+## 4. 🤔 Dependency Rule
+
+### The Fundamental Rule
+Dependencies can only point inward, toward higher-level policies (core business rules).
+
+```mermaid
+graph TD
+    A[Entities] --> B[Use Cases]
+    B --> C[Interface Adapters]
+    C --> D[External Interfaces]
+    
+    style A fill:#ffd,stroke:#333,stroke-width:2px
+    style B fill:#dfd,stroke:#333,stroke-width:2px
+    style C fill:#bbf,stroke:#333,stroke-width:2px
+    style D fill:#f9f,stroke:#333,stroke-width:2px
+    
+    classDef default fill:#fff,stroke:#333,stroke-width:2px;
+```
+
+### Dependency Inversion Examples
+
+```java
+// Domain layer defines interface
+public interface PasswordEncoder {
+    Password encode(String rawPassword);
+    boolean matches(String rawPassword, Password encoded);
+}
+
+// Infrastructure layer implements it
+public class BCryptPasswordEncoder implements PasswordEncoder {
+    private final BCrypt.Hasher hasher;
+    
+    @Override
+    public Password encode(String rawPassword) {
+        String hash = hasher.hash(rawPassword);
+        return Password.fromHash(hash);
+    }
+}
+```
+
+## 5. ⚡ Key Principles
+
+### SOLID in Clean Architecture
+
+1. **Single Responsibility**
+```java
+// Good: Focused responsibility
+public class UserRegistrationUseCase {
+    public void registerUser(RegistrationRequest request) {
+        // Only handles user registration logic
+    }
+}
+
+// Bad: Mixed responsibilities
+public class UserService {
+    public void registerUser() { }
+    public void sendEmail() { }
+    public void updateProfile() { }
+}
+```
+
+2. **Open/Closed**
+```java
+// Extensible through interfaces
+public interface NotificationSender {
+    void send(Notification notification);
+}
+
+// New implementations without modifying existing code
+public class EmailNotifier implements NotificationSender { }
+public class SMSNotifier implements NotificationSender { }
+```
+
+## 6. 📊 Testing Strategy
+
+### Testing Pyramid in Clean Architecture
+
+```java
+// 1. Domain Entity Tests
+@Test
+void userShouldValidateEmail() {
+    assertThrows(InvalidEmailException.class, 
+        () -> new User(new Email("invalid")));
+}
+
+// 2. Use Case Tests
+@Test
+void createUserShouldSucceed() {
+    CreateUserRequest request = new CreateUserRequest("test@email.com", "Test User", "password");
+    createUserUseCase.execute(request);
+    
+    verify(userRepository).save(any(User.class));
+    verify(presenter).presentSuccess(any(CreateUserResponse.class));
+}
+
+// 3. Integration Tests
+@SpringBootTest
+class UserControllerIntegrationTest {
+    @Test
+    void shouldCreateUser() {
+        webTestClient.post().uri("/users")
+            .bodyValue(new CreateUserRequest("test@email.com", "Test", "password"))
+            .exchange()
+            .expectStatus().isCreated();
+    }
+}
+```
+
+## 7. ❌ Common Anti-patterns
+
+### Violations to Avoid
+
+1. **Exposing Domain Objects**
+```java
+// Wrong: Exposing domain objects
+@GetMapping("/users/{id}")
+public User getUser(@PathVariable String id) {
+    return userRepository.findById(id);
+}
+
+// Better: Using dedicated DTOs
+@GetMapping("/users/{id}")
+public UserResponse getUser(@PathVariable String id) {
+    User user = userRepository.findById(id);
+    return mapper.toResponse(user);
+}
+```
+
+2. **Dependency Rule Violations**
+```java
+// Wrong: Domain depending on framework
+@Entity
+public class User {
+    @Id
+    private Long id;
+}
+
+// Better: Pure domain model
+public class User {
+    private final UserId id;
+}
+```
+
+## 8. 🌟 Real-world Examples
+
+### E-commerce System Example
 ```java
 // Domain Entity
-package com.example.domain;
-
-public class User {
-private final String id;
-private String name;
-private String email;
-
-    public User(String id, String name, String email) {
-        this.id = id;
-        this.name = name;
-        this.email = email;
+public class Order {
+    private OrderId id;
+    private CustomerId customerId;
+    private List<OrderItem> items;
+    private OrderStatus status;
+    
+    public Money calculateTotal() {
+        return items.stream()
+            .map(OrderItem::getSubtotal)
+            .reduce(Money.zero(), Money::add);
     }
-
-    // Getters and setters
-}
-
-// Use Case Interface
-package com.example.usecase;
-
-public interface UserRepository {
-User findById(String id);
-void save(User user);
-}
-
-// Use Case Implementation
-package com.example.usecase;
-
-public class CreateUserUseCase {
-private final UserRepository userRepository;
-
-    public CreateUserUseCase(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
-
-    public void execute(String id, String name, String email) {
-        User user = new User(id, name, email);
-        userRepository.save(user);
+    
+    public void addItem(Product product, int quantity) {
+        validateQuantity(quantity);
+        items.add(new OrderItem(product, quantity));
     }
 }
 
-// Interface Adapter
-package com.example.adapter;
-
-public class UserRepositoryImpl implements UserRepository {
-private final DatabaseConnection db;
-
-    public UserRepositoryImpl(DatabaseConnection db) {
-        this.db = db;
-    }
-
-    @Override
-    public User findById(String id) {
-        // Implementation using actual database
-        return null;
-    }
-
-    @Override
-    public void save(User user) {
-        // Implementation using actual database
+// Use Case
+public class PlaceOrderUseCase {
+    private final OrderRepository orderRepository;
+    private final PaymentGateway paymentGateway;
+    
+    public void execute(PlaceOrderRequest request) {
+        Order order = new Order(request.getCustomerId());
+        request.getItems().forEach(item -> 
+            order.addItem(item.getProduct(), item.getQuantity()));
+            
+        orderRepository.save(order);
+        paymentGateway.processPayment(order);
     }
 }
 ```
-  </TabItem>
-  <TabItem value="go" label="Go">
-```go
-// Domain Entity
-package domain
 
-type User struct {
-    ID    string
-    Name  string
-    Email string
-}
-
-// Use Case Interface
-package usecase
-
-type UserRepository interface {
-    FindByID(id string) (*domain.User, error)
-    Save(user *domain.User) error
-}
-
-// Use Case Implementation
-package usecase
-
-type CreateUserUseCase struct {
-    userRepo UserRepository
-}
-
-func NewCreateUserUseCase(repo UserRepository) *CreateUserUseCase {
-    return &CreateUserUseCase{userRepo: repo}
-}
-
-func (uc *CreateUserUseCase) Execute(id, name, email string) error {
-    user := &domain.User{
-        ID:    id,
-        Name:  name,
-        Email: email,
-    }
-    return uc.userRepo.Save(user)
-}
-
-// Interface Adapter
-package adapter
-
-type UserRepositoryImpl struct {
-    db *sql.DB
-}
-
-func NewUserRepositoryImpl(db *sql.DB) *UserRepositoryImpl {
-    return &UserRepositoryImpl{db: db}
-}
-
-func (r *UserRepositoryImpl) FindByID(id string) (*domain.User, error) {
-    // Implementation using actual database
-    return nil, nil
-}
-
-func (r *UserRepositoryImpl) Save(user *domain.User) error {
-    // Implementation using actual database
-    return nil
-}
-```
-  </TabItem>
-</Tabs>
-
-## Related Patterns 🤝
-
-1. **Hexagonal Architecture (Ports & Adapters)**
-    - Complements Clean Architecture
-    - Focuses on ports (interfaces) and adapters (implementations)
-    - Similar emphasis on separation of concerns
-
-2. **Onion Architecture**
-    - Very similar to Clean Architecture
-    - Also uses concentric circles
-    - Emphasizes dependency inversion
-
-3. **Model-View-Presenter (MVP)**
-    - Can be used within Clean Architecture's presentation layer
-    - Helps separate UI concerns
-
-## Best Practices 👌
-
-### Configuration
-- Keep configuration at the outer layers
-- Use dependency injection
-- Use environment variables for external configurations
-
-### Monitoring
-- Implement logging at boundaries between layers
-- Track performance metrics at use case level
-- Monitor database operations in repository implementations
-
-### Testing
-- Unit test domain entities independently
-- Use mocks for testing use cases
-- Integration test the adapters
-- End-to-end test through the external layers
-
-## Common Pitfalls 🚫
-
-1. **Too Many Layers**
-    - Solution: Stick to the essential layers
-    - Don't create unnecessary abstractions
-
-2. **Incorrect Dependencies**
-    - Solution: Always depend inward
-    - Use dependency inversion when needed
-
-3. **Leaking Domain Logic**
-    - Solution: Keep domain logic in entities
-    - Don't let business rules leak into outer layers
-
-4. **Anemic Domain Model**
-    - Solution: Put behavior in domain entities
-    - Don't treat entities as data carriers
-
-## Use Cases 🎯
-
-### 1. E-commerce Platform
-- Clear separation between order processing logic and payment gateways
-- Domain entities: Order, Product, Customer
-- Use cases: Place Order, Process Payment, Update Inventory
-
-### 2. Banking System
-- Isolation of core banking rules from external services
-- Domain entities: Account, Transaction, Customer
-- Use cases: Transfer Money, Check Balance, Generate Statement
-
-### 3. Healthcare Management
-- Separation of patient records from UI and storage
-- Domain entities: Patient, Appointment, Medical Record
-- Use cases: Schedule Appointment, Update Medical History
-
-## Deep Dive Topics 🤿
-
-### Thread Safety
-- Entities should be immutable when possible
-- Use thread-safe collections in repositories
-- Implement proper transaction management
-
-### Distributed Systems
-- Use event-driven architecture for communication between services
-- Implement proper error handling and retry mechanisms
-- Consider eventual consistency
-
-### Performance
-- Cache at the repository level
-- Optimize database queries
-- Use async operations when appropriate
-
-## Additional Resources 📚
+## 9. 📚 Resources and References
 
 ### Books
 - "Clean Architecture" by Robert C. Martin
-- "Implementing Domain-Driven Design" by Vaughn Vernon
 - "Get Your Hands Dirty on Clean Architecture" by Tom Hombergs
+- "Implementing Domain-Driven Design" by Vaughn Vernon
 
-### Tools
-- Spring Framework (Java)
-- Go Kit (Go)
-- JHipster (Application Generator)
+### Articles
+- [The Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
+- [Clean Architecture with Spring Boot](https://www.baeldung.com/spring-boot-clean-architecture)
 
-### References
-- [Clean Architecture Blog Post by Uncle Bob](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
-- [Clean Architecture Example Repository](https://github.com/mattia-battiston/clean-architecture-example)
-
-## FAQs ❓
-
-### Q: How is Clean Architecture different from MVC?
-A: Clean Architecture is a more comprehensive approach that focuses on separation of concerns beyond just the UI pattern that MVC addresses.
-
-### Q: Do I need all layers for small projects?
-A: No, you can adapt Clean Architecture to your needs. Small projects might combine some layers while maintaining the core principles.
-
-### Q: How do I handle cross-cutting concerns?
-A: Implement them as services that can be injected into any layer that needs them, following dependency inversion principle.
-
-### Q: What's the learning curve for Clean Architecture?
-A: It can be steep initially, but the benefits in maintainability and testability make it worthwhile for medium to large projects.
+### Tools and Frameworks
+- [ArchUnit](https://www.archunit.org/) - Architecture testing
+- [Spring Boot](https://spring.io/projects/spring-boot)
+- [Quarkus](https://quarkus.io/)

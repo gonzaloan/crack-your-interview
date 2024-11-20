@@ -1,50 +1,5 @@
-```markdown
 ## 2. 💻 Expertise Técnico
 tech_expertise/
-├── java/
-│   ├── frameworks/
-│   │   ├── spring/
-│   │   │   ├── core
-│   │   │   ├── boot
-│   │   │   ├── security
-│   │   │   ├── cloud
-│   │   │   └── data
-│   │   └── hibernate/
-│   │       ├── mapping
-│   │       ├── caching
-│   │       ├── transactions
-│   │       └── performance
-│   └── optimizacion/
-│       ├── profiling
-│       ├── benchmarking
-│       └── tuning
-├── golang/
-│   ├── core/
-│   │   ├── goroutines/
-│   │   │   ├── concurrency_patterns
-│   │   │   ├── workerpools
-│   │   │   └── synchronization
-│   │   ├── channels/
-│   │   │   ├── buffered_unbuffered
-│   │   │   ├── select
-│   │   │   └── patterns
-│   │   └── memory_management/
-│   │       ├── garbage_collection
-│   │       ├── escape_analysis
-│   │       └── memory_profiling
-│   ├── frameworks/
-│   │   ├── gin/
-│   │   │   ├── middleware
-│   │   │   ├── routing
-│   │   │   └── validation
-│   │   └── echo/
-│   │       ├── middleware
-│   │       ├── context
-│   │       └── handlers
-│   └── tooling/
-│       ├── debugging
-│       ├── testing
-│       └── profiling
 ├── bases_datos/
 │   ├── sql/
 │   │   ├── _category_.json
@@ -367,76 +322,9 @@ soft_skills/
 └── roadmap_alignment
 
 
-Prompt
 
-```
-Por favor, explica el concepto/patrón indicado siguiendo esta estructura de documentación:
 
-1. Crea un documento técnico detallado usando una estructura markdown que incluya:
 
-- Overview con descripción breve y analogía del mundo real
-
-- Key Concepts con todos los componentes y estados principales
-
-- Implementación con ejemplos en Java y Go
-
-- Patrones relacionados y cómo se complementan
-
-- Best Practices para configuración, monitoreo y testing
-
-- Common Pitfalls y cómo evitarlos
-
-- Use Cases con al menos 3 escenarios reales
-
-- Deep Dive Topics cubriendo thread safety, sistemas distribuidos y performance
-
-- Additional Resources incluyendo referencias y herramientas
-
-- FAQs con preguntas comunes
-
-2. El documento debe ser:
-
-- Técnicamente preciso pero accesible
-
-- Rico en ejemplos de código funcional
-
-- Enfocado en aplicaciones prácticas
-
-- Incluir diagramas o visualizaciones cuando sea relevante
-
-3. Asegúrate de incluir:
-
-- Ejemplos de código completos y funcionales
-
-- Escenarios del mundo real
-
-- Mejores prácticas actuales
-
-- Consideraciones de rendimiento y escalabilidad
-
-- Los bloques de codigo que sean multi-language code block entre Java y Go usando algo asi:
-
-// no olvidad agregar los imports
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-
-<Tabs>
-  <TabItem value="java" label="Java">
-    ```java
-    // Java code here
-    ```
-  </TabItem>
-  <TabItem value="go" label="Go">
-    ```go
-    // Go code here
-    ```
-  </TabItem>
-</Tabs>
-
-- Pensar que esto es para un archivo .md para docusaurus
-- Puedes ocupar emojis en los titulos para temas que lo requieran
-Por favor, genera un documento técnico completo para Microservices Distributed: SERVICE DISCOVERY siguiendo esta estructura que sea en ingles y en markdown.
-```
 
 docs/
 ├── intro.md
@@ -840,4 +728,3 @@ soft_skills/
 ├── business_goals
 ├── tech_strategy
 └── roadmap_alignment
-

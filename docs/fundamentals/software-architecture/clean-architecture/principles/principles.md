@@ -3,380 +3,534 @@ sidebar_position: 1
 title: "Principles"
 description: "Clean Architecture Principles"
 ---
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
 
-# 🏛️ Clean Architecture Deep Dive: Core Principles
+# 🏛️ Clean Architecture Principles
 
-## Overview
+## 1. Overview and Fundamentals
 
-Clean Architecture's foundation rests on specific principles that ensure system maintainability and scalability: The Dependency Rule, SOLID Principles, Architectural Boundaries, and Dependency Injection. These principles work together to create robust, maintainable software systems.
+### Core Principles
+1. **Independence of Frameworks**
+2. **Testability**
+3. **Independence of UI**
+4. **Independence of Database**
+5. **Independence of External Agencies**
 
-### Real World Analogy
-Think of a modern city's power grid. The core power plants (domain logic) don't depend on individual buildings (UI/external systems), but buildings depend on the power grid. The power company's internal policies (business rules) remain unchanged regardless of which buildings connect to it, and standardized interfaces (boundaries) ensure safe connections.
-
-## 🎯 Key Concepts
-
-### 1. The Dependency Rule 🔄
-
-The fundamental rule stating that source code dependencies must only point inwards, meaning that:
-
-- Inner circles are policies
-- Outer circles are mechanisms
-- Inner circles must not know about outer circles
-- Data formats declared in outer circles must not be used by inner circles
-
-#### Dependency Rule Visualization
+### The Dependency Rule
+All source code dependencies can only point inwards. Nothing in an inner circle can know anything about something in an outer circle.
 
 ```mermaid
 graph TD
-    A[External Interfaces/UI] --> B[Interface Adapters]
-    B --> C[Application Business Rules]
-    C --> D[Enterprise Business Rules]
-    style D fill:#f9f,stroke:#333
-    style C fill:#bbf,stroke:#333
-    style B fill:#dfd,stroke:#333
-    style A fill:#fdd,stroke:#333
+    subgraph "Clean Architecture Layers"
+        A[Entities] --> B[Use Cases]
+        B --> C[Interface Adapters]
+        C --> D[Frameworks & Drivers]
+        
+        style A fill:#f5d6a8,stroke:#333,stroke-width:2px
+        style B fill:#a8d1f5,stroke:#333,stroke-width:2px
+        style C fill:#b8f5a8,stroke:#333,stroke-width:2px
+        style D fill:#f5a8e8,stroke:#333,stroke-width:2px
+    end
+
+    classDef default fill:#fff,stroke:#333,stroke-width:2px;
 ```
 
-### 2. SOLID Principles 📐
+## 2. 🎯 SOLID Principles in Clean Architecture
 
-1. **Single Responsibility Principle (SRP)**
-    - A class should have one, and only one, reason to change
-    - Maps to separation of concerns in Clean Architecture
+### Single Responsibility Principle (SRP)
 
-2. **Open-Closed Principle (OCP)**
-    - Software entities should be open for extension but closed for modification
-    - Enables adding new features without changing existing code
-
-3. **Liskov Substitution Principle (LSP)**
-    - Objects should be replaceable with instances of their subtypes
-    - Ensures that interfaces are properly abstracted
-
-4. **Interface Segregation Principle (ISP)**
-    - Many client-specific interfaces are better than one general-purpose interface
-    - Prevents interface pollution
-
-5. **Dependency Inversion Principle (DIP)**
-    - High-level modules should not depend on low-level modules
-    - Both should depend on abstractions
-
-### 3. Architectural Boundaries 🛡️
-
-Boundaries define:
-- Where one component ends and another begins
-- How components communicate
-- What crosses the boundaries and how
-- Data structure ownership
-
-### 4. Dependency Injection 💉
-
-A technique where:
-- Objects receive their dependencies instead of creating them
-- Supports the Dependency Inversion Principle
-- Enables testability and flexibility
-
-## 💻 Implementation
-
-### Dependency Rule Implementation
-
-<Tabs>
-  <TabItem value="java" label="Java">
 ```java
-// Domain Layer (Innermost)
-package com.example.domain;
-
-public class User {
-private final String id;
-private String email;
-
-    public User(String id, String email) {
-        this.id = id;
-        this.email = email;
-    }
-    
-    // Domain logic
-    public boolean isValidEmail() {
-        return email != null && email.contains("@");
+// Wrong: Multiple responsibilities
+public class UserService {
+    public void createUser(User user) {
+        validateUser(user);
+        saveToDatabase(user);
+        sendWelcomeEmail(user);
+        notifyAdmins(user);
     }
 }
 
-// Use Case Layer
-package com.example.usecase;
+// Right: Separated responsibilities
+public class UserCreator {
+    private final UserValidator validator;
+    private final UserRepository repository;
+    private final UserNotifier notifier;
 
-public interface UserRepository {
-void save(User user);
+    public void createUser(User user) {
+        validator.validate(user);
+        User savedUser = repository.save(user);
+        notifier.notifyCreation(savedUser);
+    }
 }
 
-public class CreateUserUseCase {
-private final UserRepository repository;
-
-    public CreateUserUseCase(UserRepository repository) {
-        this.repository = repository;
+public class UserValidator {
+    public void validate(User user) {
+        validateEmail(user.getEmail());
+        validatePassword(user.getPassword());
     }
+}
+
+public class UserNotifier {
+    private final EmailService emailService;
+    private final AdminNotificationService adminService;
+
+    public void notifyCreation(User user) {
+        emailService.sendWelcomeEmail(user);
+        adminService.notifyNewUser(user);
+    }
+}
+```
+
+### Open/Closed Principle (OCP)
+
+```java
+// Interface in domain layer
+public interface PaymentGateway {
+    PaymentResult process(Payment payment);
+}
+
+// Implementations in infrastructure layer
+public class StripePaymentGateway implements PaymentGateway {
+    @Override
+    public PaymentResult process(Payment payment) {
+        // Stripe-specific implementation
+        return stripeClient.processPayment(mapToStripePayment(payment));
+    }
+}
+
+public class PayPalPaymentGateway implements PaymentGateway {
+    @Override
+    public PaymentResult process(Payment payment) {
+        // PayPal-specific implementation
+        return paypalClient.executePayment(mapToPayPalPayment(payment));
+    }
+}
+
+// Use case remains unchanged
+public class ProcessPaymentUseCase {
+    private final PaymentGateway paymentGateway;
+
+    public PaymentResult execute(Payment payment) {
+        return paymentGateway.process(payment);
+    }
+}
+```
+
+### Liskov Substitution Principle (LSP)
+
+```java
+// Base class in domain layer
+public abstract class User {
+    protected UserId id;
+    protected Email email;
     
-    public void execute(String id, String email) {
-        User user = new User(id, email);
-        if (!user.isValidEmail()) {
-            throw new IllegalArgumentException("Invalid email");
+    public abstract boolean canAccessResource(Resource resource);
+}
+
+// Derived classes maintain contract
+public class AdminUser extends User {
+    @Override
+    public boolean canAccessResource(Resource resource) {
+        return true; // Admins can access all resources
+    }
+}
+
+public class RegularUser extends User {
+    @Override
+    public boolean canAccessResource(Resource resource) {
+        return resource.isPublic() || resource.getOwnerId().equals(this.id);
+    }
+}
+
+// Usage in use case
+public class ResourceAccessUseCase {
+    public void accessResource(User user, Resource resource) {
+        if (!user.canAccessResource(resource)) {
+            throw new AccessDeniedException();
         }
-        repository.save(user);
+        // Process resource access
+    }
+}
+```
+
+### Interface Segregation Principle (ISP)
+
+```java
+// Wrong: Fat interface
+public interface UserRepository {
+    User save(User user);
+    void delete(UserId id);
+    User findById(UserId id);
+    List<User> findAll();
+    List<User> findByRole(Role role);
+    void updatePassword(UserId id, Password password);
+    void updateEmail(UserId id, Email email);
+}
+
+// Right: Segregated interfaces
+public interface UserReader {
+    Optional<User> findById(UserId id);
+    List<User> findByRole(Role role);
+}
+
+public interface UserWriter {
+    User save(User user);
+    void delete(UserId id);
+}
+
+public interface UserCredentialManager {
+    void updatePassword(UserId id, Password password);
+    void updateEmail(UserId id, Email email);
+}
+
+// Implementation can choose which interfaces to implement
+public class PostgresUserRepository implements UserReader, UserWriter {
+    // Implement only needed methods
+}
+
+public class ReadOnlyUserRepository implements UserReader {
+    // Implement only read methods
+}
+```
+
+### Dependency Inversion Principle (DIP)
+
+```java
+// High-level policy (domain layer)
+public interface NotificationSender {
+    void send(Notification notification);
+}
+
+public class NotificationService {
+    private final NotificationSender sender;
+    
+    public NotificationService(NotificationSender sender) {
+        this.sender = sender;
+    }
+    
+    public void notify(User user, String message) {
+        Notification notification = new Notification(user, message);
+        sender.send(notification);
     }
 }
 
-// Interface Adapter Layer
-package com.example.adapter;
-
-public class MySQLUserRepository implements UserRepository {
-private final JdbcTemplate jdbcTemplate;
-
-    public MySQLUserRepository(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
+// Low-level implementation (infrastructure layer)
+public class EmailNotificationSender implements NotificationSender {
+    private final EmailClient emailClient;
     
     @Override
-    public void save(User user) {
-        // Implementation
-    }
-}
-
-// Framework Layer (Outermost)
-package com.example.framework;
-
-@Configuration
-public class UserConfig {
-@Bean
-public UserRepository userRepository(JdbcTemplate jdbcTemplate) {
-return new MySQLUserRepository(jdbcTemplate);
-}
-
-    @Bean
-    public CreateUserUseCase createUserUseCase(UserRepository repository) {
-        return new CreateUserUseCase(repository);
+    public void send(Notification notification) {
+        Email email = mapToEmail(notification);
+        emailClient.send(email);
     }
 }
 ```
-  </TabItem>
-  <TabItem value="go" label="Go">
-```go
-// Domain Layer (Innermost)
-package domain
 
-import "strings"
+## 3. 🏗️ Boundary Rules
 
-type User struct {
-    ID    string
-    Email string
+### Input/Output Boundaries
+
+```java
+// Input boundary (Use case interface)
+public interface CreateOrder {
+    OrderId execute(CreateOrderRequest request);
 }
 
-func NewUser(id, email string) *User {
-    return &User{
-        ID:    id,
-        Email: email,
-    }
+// Output boundary (Presenter interface)
+public interface OrderPresenter {
+    void presentSuccess(Order order);
+    void presentError(Exception error);
 }
 
-func (u *User) IsValidEmail() bool {
-    return u.Email != "" && strings.Contains(u.Email, "@")
-}
+// Input data structure
+public record CreateOrderRequest(
+    CustomerId customerId,
+    List<OrderItem> items,
+    PaymentInfo paymentInfo
+) {}
 
-// Use Case Layer
-package usecase
-
-type UserRepository interface {
-    Save(user *domain.User) error
-}
-
-type CreateUserUseCase struct {
-    repository UserRepository
-}
-
-func NewCreateUserUseCase(repo UserRepository) *CreateUserUseCase {
-    return &CreateUserUseCase{repository: repo}
-}
-
-func (uc *CreateUserUseCase) Execute(id, email string) error {
-    user := domain.NewUser(id, email)
-    if !user.IsValidEmail() {
-        return fmt.Errorf("invalid email")
-    }
-    return uc.repository.Save(user)
-}
-
-// Interface Adapter Layer
-package adapter
-
-type MySQLUserRepository struct {
-    db *sql.DB
-}
-
-func NewMySQLUserRepository(db *sql.DB) *MySQLUserRepository {
-    return &MySQLUserRepository{db: db}
-}
-
-func (r *MySQLUserRepository) Save(user *domain.User) error {
-    // Implementation
-}
-
-// Framework Layer (Outermost)
-package main
-
-func main() {
-    db := initDB()
-    repo := adapter.NewMySQLUserRepository(db)
-    useCase := usecase.NewCreateUserUseCase(repo)
+// Use case implementation
+public class CreateOrderUseCase implements CreateOrder {
+    private final OrderRepository repository;
+    private final OrderPresenter presenter;
     
-    server := NewServer(useCase)
-    server.Start()
+    @Override
+    public OrderId execute(CreateOrderRequest request) {
+        try {
+            Order order = Order.create(
+                request.customerId(),
+                request.items(),
+                request.paymentInfo()
+            );
+            
+            repository.save(order);
+            presenter.presentSuccess(order);
+            return order.getId();
+        } catch (Exception e) {
+            presenter.presentError(e);
+            throw e;
+        }
+    }
 }
 ```
-  </TabItem>
-</Tabs>
 
-## 🔄 Related Patterns
+## 4. 🔄 Data Flow
 
-1. **Factory Pattern**
-    - Complements Dependency Injection
-    - Creates concrete implementations of interfaces
+### Clean Data Flow Example
 
-2. **Strategy Pattern**
-    - Supports the Open-Closed Principle
-    - Enables swappable implementations
-
-3. **Observer Pattern**
-    - Helps maintain boundaries
-    - Enables loose coupling between components
-
-## ✅ Best Practices
-
-### Dependency Rule
-1. Always depend inward
-2. Use interfaces at boundaries
-3. Keep domain models pure
-4. Isolate framework code
-
-### SOLID
-1. Keep classes focused (SRP)
-2. Use composition over inheritance
-3. Design interfaces for clients
-4. Inject dependencies
-
-### Boundaries
-1. Define clear contracts
-2. Use DTOs for crossing boundaries
-3. Keep boundary crossing explicit
-4. Document boundary constraints
-
-### Dependency Injection
-1. Use constructor injection when possible
-2. Avoid service locator pattern
-3. Configure at composition root
-4. Use DI containers judiciously
-
-## ⚠️ Common Pitfalls
-
-1. **Circular Dependencies**
-    - Symptom: Components depending on each other
-    - Solution: Introduce abstraction layer
-
-2. **Leaky Abstractions**
-    - Symptom: Implementation details bleeding through interfaces
-    - Solution: Design interfaces based on client needs
-
-3. **God Objects**
-    - Symptom: Classes with too many responsibilities
-    - Solution: Apply SRP strictly
-
-4. **Tight Coupling to Frameworks**
-    - Symptom: Framework annotations in domain layer
-    - Solution: Use clean boundaries and adapters
-
-## 🎯 Use Cases
-
-### 1. Payment Processing System
 ```mermaid
-graph LR
-    A[Payment Controller] --> B[Payment Use Case]
-    B --> C[Payment Gateway Interface]
-    D[Stripe Adapter] --> C
-    E[PayPal Adapter] --> C
+sequenceDiagram
+    participant Controller
+    participant UseCase
+    participant Entity
+    participant Repository
+    participant Database
+    
+    Controller->>UseCase: Request DTO
+    UseCase->>Entity: Create/Update
+    Entity->>Entity: Validate
+    UseCase->>Repository: Save Entity
+    Repository->>Database: Persist Data
+    Database-->>Repository: Confirm
+    Repository-->>UseCase: Return Entity
+    UseCase-->>Controller: Response DTO
 ```
 
-### 2. Authentication Service
-- Clear separation between auth logic and providers
-- Swappable implementations (OAuth, JWT, Basic)
-- Independent business rules
+### Implementation Example
 
-### 3. Order Management System
-- Domain-driven core business logic
-- Multiple delivery mechanisms
-- Pluggable external services
+```java
+// Controller (Interface Adapter Layer)
+@RestController
+public class OrderController {
+    private final CreateOrder createOrder;
+    private final OrderPresenter presenter;
+    
+    @PostMapping("/orders")
+    public ResponseEntity<OrderResponse> createOrder(@RequestBody OrderRequest request) {
+        CreateOrderRequest useCaseRequest = mapper.toUseCaseRequest(request);
+        createOrder.execute(useCaseRequest);
+        return ResponseEntity.ok(presenter.getViewModel());
+    }
+}
 
-## 🔍 Deep Dive Topics
+// Use Case (Application Layer)
+public class CreateOrderUseCase implements CreateOrder {
+    private final OrderRepository repository;
+    private final PaymentGateway paymentGateway;
+    private final OrderPresenter presenter;
+    
+    @Override
+    public void execute(CreateOrderRequest request) {
+        // 1. Create domain entity
+        Order order = Order.create(request.getCustomerId(), request.getItems());
+        
+        // 2. Execute business rules
+        order.validate();
+        
+        // 3. Process payment
+        PaymentResult result = paymentGateway.process(order.getPayment());
+        order.confirmPayment(result);
+        
+        // 4. Save and present
+        repository.save(order);
+        presenter.present(order);
+    }
+}
+```
 
-### Thread Safety
-1. **Immutable Domain Objects**
-    - Use final fields
-    - Initialize in constructors
-    - No setters
+## 5. 🛡️ Entity Protection
 
-2. **Thread-Safe Boundaries**
-    - Use thread-safe collections
-    - Implement proper synchronization
-    - Consider using actors
+### Encapsulation Rules
 
-### Distributed Systems
-1. **Boundary Considerations**
-    - Use message-based communication
-    - Implement retry policies
-    - Handle partial failures
+```java
+// Domain Entity with proper encapsulation
+public class Order {
+    private OrderId id;
+    private OrderStatus status;
+    private Money total;
+    private List<OrderItem> items;
+    
+    // Private constructor enforces creation through factory method
+    private Order(OrderId id, List<OrderItem> items) {
+        this.id = id;
+        this.items = new ArrayList<>(items);
+        this.status = OrderStatus.CREATED;
+        this.total = calculateTotal();
+    }
+    
+    // Factory method ensures valid creation
+    public static Order create(CustomerId customerId, List<OrderItem> items) {
+        validateItems(items);
+        return new Order(OrderId.generate(), items);
+    }
+    
+    // Protected mutation methods
+    public void addItem(OrderItem item) {
+        validateOrderStatus();
+        validateItem(item);
+        items.add(item);
+        total = calculateTotal();
+    }
+    
+    // Private validation methods
+    private void validateOrderStatus() {
+        if (status != OrderStatus.CREATED) {
+            throw new OrderAlreadyProcessedException();
+        }
+    }
+    
+    // Immutable view of collections
+    public List<OrderItem> getItems() {
+        return Collections.unmodifiableList(items);
+    }
+}
+```
 
-2. **Dependency Management**
-    - Use service discovery
-    - Implement circuit breakers
-    - Handle versioning
+## 6. ⚡ Performance Considerations
 
-### Performance
-1. **Boundary Optimization**
-    - Batch operations
-    - Caching strategies
-    - Connection pooling
+### Balancing Clean Architecture and Performance
 
-2. **Dependency Optimization**
-    - Lazy loading
-    - Resource pooling
-    - Asynchronous processing
+```java
+// Use Case with performance optimization
+public class GetUserOrdersUseCase {
+    private final OrderRepository orderRepository;
+    private final OrderPresenter presenter;
+    private final Cache cache;
+    
+    public void execute(GetUserOrdersRequest request) {
+        // Try cache first
+        Optional<List<Order>> cachedOrders = cache.get(getCacheKey(request));
+        
+        if (cachedOrders.isPresent()) {
+            presenter.present(cachedOrders.get());
+            return;
+        }
+        
+        // Repository access with optimization hints
+        List<Order> orders = orderRepository.findByUserIdWithFetchStrategy(
+            request.getUserId(),
+            request.getFetchStrategy()
+        );
+        
+        // Cache for future requests
+        cache.put(getCacheKey(request), orders);
+        
+        presenter.present(orders);
+    }
+}
 
-## 📚 Additional Resources
+// Repository implementation with performance considerations
+public class JpaOrderRepository implements OrderRepository {
+    @Override
+    public List<Order> findByUserIdWithFetchStrategy(UserId userId, FetchStrategy strategy) {
+        EntityGraph<Order> graph = createEntityGraph(strategy);
+        return entityManager.createQuery(
+                "SELECT o FROM Order o WHERE o.userId = :userId", Order.class)
+            .setHint("javax.persistence.fetchgraph", graph)
+            .setParameter("userId", userId)
+            .getResultList();
+    }
+}
+```
+
+## 7. 🔍 Testing Strategies
+
+### Testing Clean Architecture Components
+
+```java
+// Domain Entity Test
+public class OrderTest {
+    @Test
+    void shouldCalculateTotalCorrectly() {
+        List<OrderItem> items = Arrays.asList(
+            new OrderItem(new ProductId("1"), Money.of(10), 2),
+            new OrderItem(new ProductId("2"), Money.of(20), 1)
+        );
+        
+        Order order = Order.create(new CustomerId("1"), items);
+        
+        assertEquals(Money.of(40), order.getTotal());
+    }
+}
+
+// Use Case Test
+public class CreateOrderUseCaseTest {
+    @Mock private OrderRepository repository;
+    @Mock private PaymentGateway paymentGateway;
+    @Mock private OrderPresenter presenter;
+    
+    @Test
+    void shouldCreateOrderSuccessfully() {
+        CreateOrderRequest request = new CreateOrderRequest(
+            new CustomerId("1"),
+            Collections.singletonList(new OrderItem(new ProductId("1"), Money.of(10), 1))
+        );
+        
+        when(paymentGateway.process(any())).thenReturn(PaymentResult.success());
+        
+        createOrderUseCase.execute(request);
+        
+        verify(repository).save(any(Order.class));
+        verify(presenter).present(any(Order.class));
+    }
+}
+
+// Controller Integration Test
+@SpringBootTest
+public class OrderControllerIntegrationTest {
+    @Autowired private WebTestClient webTestClient;
+    
+    @Test
+    void shouldCreateOrder() {
+        OrderRequest request = new OrderRequest(/* ... */);
+        
+        webTestClient.post().uri("/orders")
+            .bodyValue(request)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody(OrderResponse.class)
+            .value(response -> {
+                assertNotNull(response.getId());
+                assertEquals(OrderStatus.CREATED, response.getStatus());
+            });
+    }
+}
+```
+
+## 8. 📚 Best Practices and Guidelines
+
+1. **Keep Entities Pure**
+   - No framework dependencies
+   - Business rules only
+   - Self-validation
+
+2. **Use Cases Single Purpose**
+   - One primary operation
+   - Clear input/output boundaries
+   - Independent of UI/database
+
+3. **Interface Adapters**
+   - Convert data between layers
+   - Handle framework specifics
+   - Implement interfaces defined by inner layers
+
+4. **Framework Independence**
+   - Delay framework decisions
+   - Use dependency injection
+   - Abstract external dependencies
+
+5. **Testing Pyramid**
+   - Unit tests for entities and use cases
+   - Integration tests for adapters
+   - End-to-end tests for critical paths
+
+## 9. 🎓 Learning Resources
 
 ### Books
-1. "Clean Architecture" by Robert C. Martin
-2. "Dependency Injection Principles, Practices, and Patterns" by Steven van Deursen
-3. "Building Evolutionary Architectures" by Neal Ford
+- "Clean Architecture" by Robert C. Martin
+- "Implementing Domain-Driven Design" by Vaughn Vernon
+- "Get Your Hands Dirty on Clean Architecture" by Tom Hombergs
 
-### Tools
-1. Spring Framework (DI Container)
-2. Wire (Go DI toolkit)
-3. ArchUnit (Architecture testing)
-4. SonarQube (Code quality)
-
-### References
-1. [Clean Architecture Blog](https://blog.cleancoder.com)
-2. [SOLID Principles in Practice](https://www.digitalocean.com/community/conceptual_articles/s-o-l-i-d-the-first-five-principles-of-object-oriented-design)
-
-## ❓ FAQs
-
-### Q: How strict should I be with the Dependency Rule?
-A: Very strict in the domain and use case layers, more flexible in outer layers.
-
-### Q: When should I create an interface?
-A: When you need to protect against changes or support multiple implementations.
-
-### Q: How do I handle cross-cutting concerns?
-A: Use aspects or decorators at the boundary level, never in the domain.
-
-### Q: Should I use DI containers everywhere?
-A: No, use them at the composition root only. Keep domain and use cases pure.
-
-### Q: How do I test components across boundaries?
-A: Use integration tests for boundaries, unit tests for components, and mocks for dependencies.
+### Online Resources
+- [The Clean Architecture Blog Post](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
+- [Clean Architecture Example](https://github.com/mattia-battiston/clean-architecture-example)
+- [Practical Clean Architecture](https://www.youtube.com/watch?v=_wQqz_7S-zQ)

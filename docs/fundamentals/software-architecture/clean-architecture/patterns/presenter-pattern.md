@@ -3,462 +3,509 @@ sidebar_position: 2
 title: "Presenter Pattern"
 description: "Clean Architecture Layers - Presenter Pattern"
 ---
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-
 # 🎭 Presenter Pattern in Clean Architecture
 
-## Overview
+## 1. Overview and Purpose
 
-The Presenter Pattern is a key component of Clean Architecture's interface adapters layer, responsible for transforming data from use cases into a format suitable for the view/UI. It ensures a clear separation between business logic and presentation logic.
+### Definition
+The Presenter Pattern transforms use case output data into a format suitable for the view layer, maintaining a clear separation between business logic and presentation concerns in Clean Architecture.
 
-### Real World Analogy
-Think of a professional interpreter at the United Nations. They take complex diplomatic language and translate it into terms that everyone can understand, while maintaining the original meaning. Similarly, a presenter takes complex business data and transforms it into a format that's ready for display, without changing the underlying meaning.
+### Problems Solved
+- Mixed presentation and business logic
+- Complex view formatting
+- View layer coupling
+- Testing visualization logic
+- Localization complexity
+- Response format flexibility
 
-## 🎯 Key Concepts
+### Business Value
+- Improved maintainability
+- Enhanced testability
+- Better separation of concerns
+- Simplified view logic
+- Easier format changes
+- Consistent user experience
 
-### Core Components
+## 2. 🏗️ Presenter Pattern Structure
 
 ```mermaid
-graph TD
-    A[Use Case Output] --> B[Presenter]
-    B --> C[View Model]
-    C --> D[View]
-    E[Response Model] --> B
-    style B fill:#bbf,stroke:#333
-    style C fill:#dfd,stroke:#333
+sequenceDiagram
+    participant C as Controller
+    participant U as Use Case
+    participant P as Presenter
+    participant V as View Model
+    
+    C->>U: Execute
+    U->>P: Present Result
+    P->>V: Format Data
+    V->>C: Return View Model
+    
+    note over P: Transforms domain data
+    note over V: UI-specific format
 ```
 
-1. **Presenter Interface**
-    - Defines transformation contract
-    - Independent of UI framework
-    - Part of application boundary
+## 3. 💻 Implementation Examples
 
-2. **Presenter Implementation**
-    - Transforms domain/use case data
-    - Creates view models
-    - Handles formatting logic
+### Basic Presenter Pattern
 
-3. **View Model**
-    - UI-specific data structure
-    - Ready-to-display format
-    - No business logic
-
-4. **View Interface**
-    - Defines display contract
-    - Implemented by UI layer
-    - Receives view model
-
-## 💻 Implementation
-
-### Basic Presenter Pattern Implementation
-
-<Tabs>
-  <TabItem value="java" label="Java">
 ```java
-// Domain Entity
-package com.example.domain;
-
-public class User {
-private final String id;
-private final String name;
-private final String email;
-private final LocalDateTime createdAt;
-private final UserStatus status;
-
-    public User(String id, String name, String email, 
-                LocalDateTime createdAt, UserStatus status) {
-        this.id = id;
-        this.name = name;
-        this.email = email;
-        this.createdAt = createdAt;
-        this.status = status;
-    }
-
-    // Getters
+// Domain Layer - Output Port
+public interface OrderPresenter {
+    void presentSuccess(Order order);
+    void presentError(Exception error);
+    OrderViewModel getViewModel();
 }
 
-// Use Case Response
-package com.example.usecase;
-
-public class UserResponse {
-private final User user;
-private final List<String> roles;
-
-    public UserResponse(User user, List<String> roles) {
-        this.user = user;
-        this.roles = roles;
-    }
-
-    // Getters
-}
-
-// View Model
-package com.example.presenter;
-
-public class UserViewModel {
-private final String id;
-private final String displayName;
-private final String emailAddress;
-private final String createdDate;
-private final String statusBadge;
-private final List<String> permissions;
-private final String statusColor;
-
-    private UserViewModel(Builder builder) {
-        this.id = builder.id;
-        this.displayName = builder.displayName;
-        this.emailAddress = builder.emailAddress;
-        this.createdDate = builder.createdDate;
-        this.statusBadge = builder.statusBadge;
-        this.permissions = builder.permissions;
-        this.statusColor = builder.statusColor;
-    }
-
-    // Builder and getters
-    public static class Builder {
-        // Builder implementation
+// Application Layer - Use Case
+public class CreateOrderUseCase {
+    private final OrderRepository orderRepository;
+    private final OrderPresenter presenter;
+    
+    public void execute(CreateOrderRequest request) {
+        try {
+            Order order = Order.create(
+                CustomerId.from(request.getCustomerId()),
+                request.getItems().stream()
+                    .map(this::toOrderItem)
+                    .collect(Collectors.toList())
+            );
+            
+            orderRepository.save(order);
+            presenter.presentSuccess(order);
+        } catch (Exception e) {
+            presenter.presentError(e);
+        }
     }
 }
 
-// Presenter Interface
-package com.example.presenter;
-
-public interface UserPresenter {
-UserViewModel present(UserResponse response);
-}
-
-// Presenter Implementation
-package com.example.presenter;
-
-@Component
-public class UserPresenterImpl implements UserPresenter {
-private final DateTimeFormatter dateFormatter;
-private final StatusFormatter statusFormatter;
-
-    public UserPresenterImpl(DateTimeFormatter dateFormatter, 
-                           StatusFormatter statusFormatter) {
-        this.dateFormatter = dateFormatter;
-        this.statusFormatter = statusFormatter;
-    }
-
+// Interface Adapters Layer - Presenter Implementation
+public class OrderPresenterImpl implements OrderPresenter {
+    private OrderViewModel viewModel;
+    
     @Override
-    public UserViewModel present(UserResponse response) {
-        User user = response.getUser();
-        
-        return new UserViewModel.Builder()
-            .id(user.getId())
-            .displayName(formatDisplayName(user))
-            .emailAddress(user.getEmail())
-            .createdDate(formatDate(user.getCreatedAt()))
-            .statusBadge(statusFormatter.format(user.getStatus()))
-            .statusColor(getStatusColor(user.getStatus()))
-            .permissions(mapRolesToPermissions(response.getRoles()))
-            .build();
-    }
-
-    private String formatDisplayName(User user) {
-        return String.format("%s (%s)", 
-            user.getName(), 
-            user.getEmail().split("@")[0]
+    public void presentSuccess(Order order) {
+        this.viewModel = new OrderViewModel(
+            order.getId().toString(),
+            formatCustomerInfo(order.getCustomer()),
+            formatOrderItems(order.getItems()),
+            formatTotalAmount(order.getTotal()),
+            formatOrderStatus(order.getStatus()),
+            formatOrderDate(order.getCreatedAt())
         );
     }
-
-    private String formatDate(LocalDateTime date) {
-        return dateFormatter.format(date);
+    
+    @Override
+    public void presentError(Exception error) {
+        this.viewModel = OrderViewModel.error(
+            translateErrorMessage(error)
+        );
     }
+    
+    @Override
+    public OrderViewModel getViewModel() {
+        return viewModel;
+    }
+    
+    private String formatTotalAmount(Money total) {
+        return NumberFormat.getCurrencyInstance()
+            .format(total.getAmount());
+    }
+    
+    private String formatOrderDate(Instant date) {
+        return DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
+            .format(date.atZone(ZoneId.systemDefault()));
+    }
+}
 
-    private String getStatusColor(UserStatus status) {
-        return switch (status) {
-            case ACTIVE -> "green";
-            case INACTIVE -> "gray";
-            case SUSPENDED -> "red";
-            default -> "black";
+// Interface Adapters Layer - View Model
+public record OrderViewModel(
+    String orderId,
+    String customerInfo,
+    List<OrderItemViewModel> items,
+    String totalAmount,
+    String status,
+    String orderDate,
+    boolean hasError,
+    String errorMessage
+) {
+    public static OrderViewModel error(String message) {
+        return new OrderViewModel(
+            null, null, List.of(), null, null, null,
+            true, message
+        );
+    }
+}
+```
+
+### REST API Presenter
+
+```java
+// Domain Layer - Output Port
+public interface UserPresenter {
+    void presentUser(User user);
+    void presentUsers(List<User> users);
+    void presentError(Exception error);
+    ResponseEntity<?> getResponse();
+}
+
+// Interface Adapters Layer - REST Presenter
+public class UserRestPresenter implements UserPresenter {
+    private ResponseEntity<?> response;
+    
+    @Override
+    public void presentUser(User user) {
+        UserResponse userResponse = mapToResponse(user);
+        response = ResponseEntity.ok(userResponse);
+    }
+    
+    @Override
+    public void presentUsers(List<User> users) {
+        List<UserResponse> userResponses = users.stream()
+            .map(this::mapToResponse)
+            .collect(Collectors.toList());
+            
+        PagedResponse<UserResponse> pagedResponse = new PagedResponse<>(
+            userResponses,
+            userResponses.size(),
+            1,
+            1
+        );
+        
+        response = ResponseEntity.ok(pagedResponse);
+    }
+    
+    @Override
+    public void presentError(Exception error) {
+        ErrorResponse errorResponse = new ErrorResponse(
+            translateErrorCode(error),
+            error.getMessage()
+        );
+        
+        HttpStatus status = determineHttpStatus(error);
+        response = ResponseEntity.status(status)
+            .body(errorResponse);
+    }
+    
+    @Override
+    public ResponseEntity<?> getResponse() {
+        return response;
+    }
+    
+    private UserResponse mapToResponse(User user) {
+        return new UserResponse(
+            user.getId().toString(),
+            user.getName().getFullName(),
+            user.getEmail().getValue(),
+            user.getRole().toString(),
+            formatDateTime(user.getCreatedAt())
+        );
+    }
+    
+    private HttpStatus determineHttpStatus(Exception error) {
+        return switch (error) {
+            case ValidationException e -> HttpStatus.BAD_REQUEST;
+            case NotFoundException e -> HttpStatus.NOT_FOUND;
+            case AuthorizationException e -> HttpStatus.FORBIDDEN;
+            default -> HttpStatus.INTERNAL_SERVER_ERROR;
         };
     }
+}
+```
 
-    private List<String> mapRolesToPermissions(List<String> roles) {
-        // Implementation
-        return roles.stream()
-            .flatMap(this::getRolePermissions)
-            .distinct()
+### Localized Presenter
+
+```java
+// Domain Layer - Output Port
+public interface ProductPresenter {
+    void presentProduct(Product product);
+    void presentError(Exception error);
+    LocalizedViewModel getViewModel();
+}
+
+// Interface Adapters Layer - Localized Presenter
+public class LocalizedProductPresenter implements ProductPresenter {
+    private final MessageSource messageSource;
+    private final Locale locale;
+    private LocalizedViewModel viewModel;
+    
+    @Override
+    public void presentProduct(Product product) {
+        this.viewModel = new LocalizedViewModel(
+            product.getId().toString(),
+            localizeProductName(product),
+            localizeDescription(product),
+            formatPrice(product.getPrice()),
+            localizeCategories(product.getCategories()),
+            localizeTags(product.getTags())
+        );
+    }
+    
+    private String localizeProductName(Product product) {
+        String key = "product.name." + product.getNameKey();
+        return messageSource.getMessage(key, null, locale);
+    }
+    
+    private String formatPrice(Money price) {
+        NumberFormat formatter = NumberFormat.getCurrencyInstance(locale);
+        return formatter.format(price.getAmount());
+    }
+    
+    private List<String> localizeCategories(List<Category> categories) {
+        return categories.stream()
+            .map(category -> messageSource.getMessage(
+                "category." + category.getKey(),
+                null,
+                locale
+            ))
             .collect(Collectors.toList());
     }
 }
-```
-  </TabItem>
-  <TabItem value="go" label="Go">
-```go
-// Domain Entity
-package domain
 
-type User struct {
-    ID        string
-    Name      string
-    Email     string
-    CreatedAt time.Time
-    Status    UserStatus
-}
-
-// Use Case Response
-package usecase
-
-type UserResponse struct {
-    User  *domain.User
-    Roles []string
-}
-
-// View Model
-package presenter
-
-type UserViewModel struct {
-    ID           string   `json:"id"`
-    DisplayName  string   `json:"displayName"`
-    EmailAddress string   `json:"emailAddress"`
-    CreatedDate  string   `json:"createdDate"`
-    StatusBadge  string   `json:"statusBadge"`
-    Permissions  []string `json:"permissions"`
-    StatusColor  string   `json:"statusColor"`
-}
-
-// Presenter Interface
-package presenter
-
-type UserPresenter interface {
-    Present(response *usecase.UserResponse) *UserViewModel
-}
-
-// Presenter Implementation
-package presenter
-
-type userPresenter struct {
-    dateFormatter   DateFormatter
-    statusFormatter StatusFormatter
-}
-
-func NewUserPresenter(df DateFormatter, sf StatusFormatter) UserPresenter {
-    return &userPresenter{
-        dateFormatter:   df,
-        statusFormatter: sf,
-    }
-}
-
-func (p *userPresenter) Present(response *usecase.UserResponse) *UserViewModel {
-    user := response.User
+// Controller Usage
+@RestController
+public class ProductController {
+    private final GetProductUseCase getProductUseCase;
+    private final ProductPresenterFactory presenterFactory;
     
-    return &UserViewModel{
-        ID:           user.ID,
-        DisplayName:  p.formatDisplayName(user),
-        EmailAddress: user.Email,
-        CreatedDate:  p.formatDate(user.CreatedAt),
-        StatusBadge:  p.statusFormatter.Format(user.Status),
-        StatusColor:  p.getStatusColor(user.Status),
-        Permissions:  p.mapRolesToPermissions(response.Roles),
+    @GetMapping("/products/{id}")
+    public LocalizedViewModel getProduct(
+            @PathVariable String id,
+            @RequestHeader(name = "Accept-Language", defaultValue = "en") 
+            String language) {
+        Locale locale = Locale.forLanguageTag(language);
+        ProductPresenter presenter = presenterFactory.createPresenter(locale);
+        
+        getProductUseCase.execute(id, presenter);
+        return presenter.getViewModel();
     }
-}
-
-func (p *userPresenter) formatDisplayName(user *domain.User) string {
-    username := strings.Split(user.Email, "@")[0]
-    return fmt.Sprintf("%s (%s)", user.Name, username)
-}
-
-func (p *userPresenter) formatDate(date time.Time) string {
-    return p.dateFormatter.Format(date)
-}
-
-func (p *userPresenter) getStatusColor(status domain.UserStatus) string {
-    switch status {
-    case domain.StatusActive:
-        return "green"
-    case domain.StatusInactive:
-        return "gray"
-    case domain.StatusSuspended:
-        return "red"
-    default:
-        return "black"
-    }
-}
-
-func (p *userPresenter) mapRolesToPermissions(roles []string) []string {
-    // Implementation
-    permissions := make(map[string]struct{})
-    for _, role := range roles {
-        for _, perm := range p.getRolePermissions(role) {
-            permissions[perm] = struct{}{}
-        }
-    }
-    
-    result := make([]string, 0, len(permissions))
-    for perm := range permissions {
-        result = append(result, perm)
-    }
-    return result
 }
 ```
-  </TabItem>
-</Tabs>
 
-## 🔄 Related Patterns
+## 4. 🧪 Testing Strategies
 
-1. **Model-View-Presenter (MVP)**
-    - Traditional UI pattern
-    - Presenter acts as mediator
-    - View is passive
+### Presenter Unit Tests
 
-2. **View-Model Pattern**
-    - Complements Presenter Pattern
-    - Provides UI-specific data structure
-    - Supports view state management
+```java
+public class OrderPresenterTest {
+    private OrderPresenter presenter;
+    private TestClock clock;
+    
+    @BeforeEach
+    void setUp() {
+        clock = new TestClock();
+        presenter = new OrderPresenterImpl(clock);
+    }
+    
+    @Test
+    void shouldFormatOrderSuccessfully() {
+        // Arrange
+        Order order = createTestOrder();
+        
+        // Act
+        presenter.presentSuccess(order);
+        OrderViewModel viewModel = presenter.getViewModel();
+        
+        // Assert
+        assertNotNull(viewModel);
+        assertEquals("$99.99", viewModel.totalAmount());
+        assertEquals("March 15, 2024", viewModel.orderDate());
+        assertFalse(viewModel.hasError());
+    }
+    
+    @Test
+    void shouldHandleErrorPresentation() {
+        // Arrange
+        Exception error = new OrderValidationException("Invalid order");
+        
+        // Act
+        presenter.presentError(error);
+        OrderViewModel viewModel = presenter.getViewModel();
+        
+        // Assert
+        assertTrue(viewModel.hasError());
+        assertEquals("Invalid order", viewModel.errorMessage());
+    }
+}
 
-3. **Adapter Pattern**
-    - Similar transformation role
-    - Different interfaces adaptation
-    - Often used together with Presenter
+// Integration Test
+public class OrderControllerIntegrationTest {
+    @Test
+    void shouldReturnFormattedOrder() {
+        // Act
+        MvcResult result = mockMvc.perform(get("/orders/{id}", orderId)
+            .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andReturn();
+            
+        // Assert
+        OrderViewModel viewModel = objectMapper.readValue(
+            result.getResponse().getContentAsString(),
+            OrderViewModel.class
+        );
+        
+        assertNotNull(viewModel);
+        assertEquals("$99.99", viewModel.totalAmount());
+    }
+}
+```
 
-## ✅ Best Practices
+## 5. 🎯 Best Practices
 
-### Configuration
-1. Use dependency injection for formatters and utilities
-2. Configure locale and formatting rules centrally
-3. Implement proper error handling
-4. Use builder pattern for complex view models
+### 1. Keep Presenters Focused
 
-### Monitoring
-1. Log transformation errors
-2. Track presentation performance
-3. Monitor memory usage
-4. Implement error boundaries
+```java
+// Good: Single responsibility
+public class UserPresenter implements Presenter<User, UserViewModel> {
+    @Override
+    public UserViewModel present(User user) {
+        return new UserViewModel(
+            user.getId().toString(),
+            formatName(user.getName()),
+            formatEmail(user.getEmail()),
+            formatCreatedAt(user.getCreatedAt())
+        );
+    }
+}
 
-### Testing
-1. Unit test each transformation
-2. Test edge cases and formatting
-3. Verify localization handling
-4. Test error scenarios
+// Bad: Mixed responsibilities
+public class UserPresenter {
+    public UserViewModel present(User user) {
+        validateUser(user);  // Validation doesn't belong here
+        updateLastAccess(user);  // Business logic doesn't belong here
+        return new UserViewModel(/*...*/);
+    }
+}
+```
 
-## ⚠️ Common Pitfalls
+### 2. Use Builder Pattern for Complex ViewModels
+
+```java
+public class OrderViewModelBuilder {
+    private String orderId;
+    private String customerInfo;
+    private List<OrderItemViewModel> items = new ArrayList<>();
+    private String totalAmount;
+    private String status;
+    private String orderDate;
+    
+    public OrderViewModelBuilder withOrder(Order order) {
+        this.orderId = order.getId().toString();
+        this.customerInfo = formatCustomerInfo(order.getCustomer());
+        return this;
+    }
+    
+    public OrderViewModelBuilder withItems(List<OrderItem> items) {
+        this.items = items.stream()
+            .map(this::createItemViewModel)
+            .collect(Collectors.toList());
+        return this;
+    }
+    
+    public OrderViewModel build() {
+        return new OrderViewModel(
+            orderId,
+            customerInfo,
+            items,
+            totalAmount,
+            status,
+            orderDate,
+            false,
+            null
+        );
+    }
+}
+```
+
+### 3. Implement Error Handling
+
+```java
+public class ErrorPresenter {
+    private final MessageSource messageSource;
+    private final Locale locale;
+    
+    public ErrorViewModel presentException(Exception ex) {
+        return switch (ex) {
+            case ValidationException e -> presentValidationError(e);
+            case BusinessException e -> presentBusinessError(e);
+            case TechnicalException e -> presentTechnicalError(e);
+            default -> presentUnexpectedError(ex);
+        };
+    }
+    
+    private ErrorViewModel presentValidationError(ValidationException ex) {
+        return new ErrorViewModel(
+            "VALIDATION_ERROR",
+            localizeMessage(ex.getMessageKey()),
+            ex.getFieldErrors().stream()
+                .map(this::localizeFieldError)
+                .collect(Collectors.toList())
+        );
+    }
+    
+    private String localizeMessage(String key) {
+        return messageSource.getMessage(key, null, locale);
+    }
+}
+```
+
+## 6. 🚫 Anti-patterns
+
+### Common Mistakes to Avoid
 
 1. **Business Logic in Presenters**
-    - Symptom: Complex calculations in presenter
-    - Solution: Move to use cases
-
-2. **View Logic in Presenters**
-    - Symptom: UI-specific code in presenter
-    - Solution: Move to view layer
-
-3. **Complex View Models**
-    - Symptom: Too many responsibilities
-    - Solution: Split into smaller models
-
-4. **Tight Coupling to Framework**
-    - Symptom: Framework annotations in presenter
-    - Solution: Use clean interfaces
-
-## 🎯 Use Cases
-
-### 1. Dashboard Analytics
-```mermaid
-graph LR
-    A[Analytics Data] --> B[Analytics Presenter]
-    B --> C[Dashboard ViewModel]
-    C --> D[Charts and Graphs]
-```
-
-### 2. User Profile Management
-- Complex data transformation
-- Localization requirements
-- Status and permission handling
-
-### 3. Financial Reports
-- Number formatting
-- Currency conversion
-- Date/time handling
-
-## 🔍 Deep Dive Topics
-
-### Thread Safety
-
-1. **Immutable View Models**
 ```java
-@Immutable
-public final class SafeViewModel {
-    private final String data;
-    
-    public SafeViewModel(String data) {
-        this.data = data;
+// Wrong: Business logic in presenter
+public class OrderPresenter implements OrderPresenter {
+    public void presentOrder(Order order) {
+        if (order.getTotal().isGreaterThan(Money.of(1000))) {
+            applyDiscount(order);  // Business logic!
+        }
+        // ... presentation logic
     }
-    
-    public String getData() {
-        return data;
+}
+
+// Better: Keep presenter focused on presentation
+public class OrderPresenter implements OrderPresenter {
+    public void presentOrder(Order order) {
+        viewModel = new OrderViewModel(
+            formatOrderId(order.getId()),
+            formatAmount(order.getTotal()),
+            formatDiscount(order.getDiscount())
+        );
     }
 }
 ```
 
-2. **Thread-Safe Formatters**
+2. **Direct View Updates**
 ```java
-public class ThreadSafePresenter {
-    private final ThreadLocal<DateFormat> dateFormat = 
-        ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd"));
-        
-    public String formatDate(Date date) {
-        return dateFormat.get().format(date);
-    }
-}
-```
-
-### Performance
-
-1. **Caching View Models**
-```java
-public class CachingPresenter {
-    private final LoadingCache<String, ViewModel> cache;
+// Wrong: Presenter updating view directly
+public class UserPresenter {
+    private final UserView view;
     
-    public ViewModel present(Response response) {
-        return cache.get(response.getId(), () -> transform(response));
+    public void presentUser(User user) {
+        view.setName(user.getName());  // Direct view manipulation
+        view.setEmail(user.getEmail());
+    }
+}
+
+// Better: Return view model
+public class UserPresenter {
+    public UserViewModel presentUser(User user) {
+        return new UserViewModel(
+            formatName(user.getName()),
+            formatEmail(user.getEmail())
+        );
     }
 }
 ```
 
-2. **Lazy Loading**
-```java
-public class LazyViewModel {
-    private final Supplier<String> expensiveOperation;
-    
-    public String getData() {
-        return expensiveOperation.get();
-    }
-}
-```
-
-## 📚 Additional Resources
+## 7. 📚 References
 
 ### Books
-1. "Clean Architecture" by Robert C. Martin
-2. "Patterns of Enterprise Application Architecture" by Martin Fowler
-3. "Building Evolutionary Architectures" by Neal Ford
+- "Clean Architecture" by Robert C. Martin
+- "Patterns of Enterprise Application Architecture" by Martin Fowler
+- "GUI Architectures" by Martin Fowler
 
-### Tools
-1. MapStruct (Java)
-2. AutoMapper (Go)
-3. Formatting libraries
-4. Testing frameworks
-
-### References
-1. [Martin Fowler - Presentation Patterns](https://martinfowler.com/eaaDev/PresentationModel.html)
-2. [Clean Architecture Blog](https://blog.cleancoder.com)
-
-## ❓ FAQs
-
-### Q: When should I use a Presenter vs direct mapping?
-A: Use a Presenter when you need complex transformations or formatting logic.
-
-### Q: How do I handle different view types?
-A: Create specific presenters or presenter methods for each view type.
-
-### Q: Should presenters handle errors?
-A: Yes, but only presentation-related errors. Business errors should be handled earlier.
-
-### Q: How to handle localization?
-A: Inject localization services into presenters and keep all formatting logic centralized.
-
-### Q: Can I reuse presenters?
-A: Yes, but ensure they remain focused and don't become too complex.
+### Articles
+- [The Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
+- [Presentation Domain Data Layering](https://martinfowler.com/bliki/PresentationDomainDataLayering.html)

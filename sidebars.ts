@@ -190,6 +190,17 @@ const sidebars = {
                 'fundamentals/distributed-systems/distributed-patterns/retry',
                 'fundamentals/distributed-systems/distributed-patterns/fallback',
                 'fundamentals/distributed-systems/distributed-patterns/saga',
+                'fundamentals/distributed-systems/distributed-patterns/api-gateway',
+                'fundamentals/distributed-systems/distributed-patterns/cache-aside',
+                'fundamentals/distributed-systems/distributed-patterns/cqrs',
+                'fundamentals/distributed-systems/distributed-patterns/event-sourcing',
+                'fundamentals/distributed-systems/distributed-patterns/idempotency',
+                'fundamentals/distributed-systems/distributed-patterns/leader-election',
+                'fundamentals/distributed-systems/distributed-patterns/message-queue',
+                'fundamentals/distributed-systems/distributed-patterns/publisher-subscriber',
+                'fundamentals/distributed-systems/distributed-patterns/rate-limiting',
+                'fundamentals/distributed-systems/distributed-patterns/service-discovery',
+                'fundamentals/distributed-systems/distributed-patterns/sharding',
               ]
             },
             {
@@ -506,9 +517,15 @@ const sidebars = {
 
         }
       ]
+    },
+    {
+      type: 'category',
+      label: 'Interview Questions',
+      collapsed: true,
+      items: [
+          'interviews/technical-backend-analyst'
+      ]
     }
-
-
   ],
 };
 

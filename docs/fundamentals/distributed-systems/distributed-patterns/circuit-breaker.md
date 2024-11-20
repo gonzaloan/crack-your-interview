@@ -4,323 +4,445 @@ title: "Circuit Breaker"
 description: "Distributed Patterns - Circuit Beaker"
 ---
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-
 # 🔌 Circuit Breaker Pattern
 
-## Overview
+## 📋 Overview and Problem Statement
 
-The Circuit Breaker pattern prevents system failures by detecting failing remote service calls and stopping further calls to failing components. Like an electrical circuit breaker that protects your home from power surges, this pattern protects your distributed system from cascading failures.
+### Definition
+The Circuit Breaker pattern prevents cascading failures by monitoring for failures and encapsulating the logic of preventing a failure from constantly recurring.
 
-### Real-World Analogy
-Imagine a crowd control system at a theme park. When a ride experiences technical issues, staff immediately stop letting new people join the queue (circuit "opens"). After a set time, they let a few people in to test if the ride is working (half-open state). If successful, they fully reopen the queue (circuit "closes"); if not, they continue blocking new entries.
+### Problems It Solves
+- Cascading failures in distributed systems
+- Resource exhaustion
+- Unresponsive service handling
+- Unnecessary load on failing services
+- Long response times during failures
 
-## 🔑 Key Concepts
+### Business Value
+- Improved system resilience
+- Better user experience during partial outages
+- Reduced system recovery time
+- Protected system resources
+- Faster failure detection
 
-### States
-1. **Closed**: Normal operation, requests flow through
-2. **Open**: Requests fail fast, no remote calls made
-3. **Half-Open**: Limited requests allowed to test system
+## 🏗️ Architecture & Core Concepts
 
-### Components
-- **Failure Counter**: Tracks failed requests
-- **Threshold Detector**: Monitors failure thresholds
-- **State Machine**: Manages circuit breaker states
-- **Timer**: Controls reset/recovery timing
-- **Fallback Handler**: Provides alternative responses
+### States and Transitions
+```mermaid
+stateDiagram-v2
+    [*] --> Closed
+    Closed --> Open : Failure Threshold Reached
+    Open --> Half_Open : Timeout Period Elapsed
+    Half_Open --> Closed : Success Threshold Reached
+    Half_Open --> Open : Single Failure
+```
 
-## 💻 Implementation
+### System Components
+```mermaid
+graph TD
+    subgraph "Circuit Breaker"
+        S[State Machine]
+        F[Failure Counter]
+        T[Timeout Timer]
+        C[Configuration]
+    end
 
-### Basic Circuit Breaker Implementation
+    subgraph "Monitoring"
+        M[Metrics]
+        A[Alerts]
+        L[Logs]
+    end
 
-<Tabs>
-  <TabItem value="java" label="Java">
-    ```java
-    import java.time.LocalDateTime;
-    import java.util.concurrent.atomic.AtomicInteger;
-    import java.util.concurrent.atomic.AtomicReference;
+    S --> F
+    S --> T
+    S --> C
+    S --> M
+    M --> A
+    M --> L
+```
 
-    public class CircuitBreaker {
-        private final AtomicReference<State> state = new AtomicReference<>(State.CLOSED);
-        private final AtomicInteger failureCount = new AtomicInteger(0);
-        private final AtomicReference<LocalDateTime> lastFailureTime = new AtomicReference<>();
-        
-        private final int failureThreshold;
-        private final int resetTimeout;
-        
-        public enum State {
-            CLOSED, OPEN, HALF_OPEN
+## 💻 Technical Implementation
+
+### Basic Circuit Breaker
+```java
+public class CircuitBreaker {
+    private final long timeout;
+    private final long failureThreshold;
+    private final long resetTimeout;
+    
+    private State state;
+    private long failures;
+    private long lastFailureTime;
+    private final AtomicReference<State> stateRef;
+    private final MetricRegistry metrics;
+
+    public enum State {
+        CLOSED,
+        OPEN,
+        HALF_OPEN
+    }
+
+    public <T> T execute(Supplier<T> supplier) throws Exception {
+        if (!canExecute()) {
+            throw new CircuitBreakerOpenException();
         }
-        
-        public CircuitBreaker(int failureThreshold, int resetTimeout) {
-            this.failureThreshold = failureThreshold;
-            this.resetTimeout = resetTimeout;
+
+        try {
+            T result = supplier.get();
+            onSuccess();
+            return result;
+        } catch (Exception e) {
+            onFailure();
+            throw e;
         }
+    }
+
+    private boolean canExecute() {
+        State currentState = stateRef.get();
         
-        public <T> T execute(ServiceCall<T> serviceCall) throws Exception {
-            if (shouldAllowExecution()) {
-                try {
-                    T result = serviceCall.execute();
-                    onSuccess();
-                    return result;
-                } catch (Exception e) {
-                    onFailure();
-                    throw e;
-                }
-            }
-            return handleFailedCircuit();
+        if (currentState == State.CLOSED) {
+            return true;
         }
-        
-        private boolean shouldAllowExecution() {
-            State currentState = state.get();
-            if (currentState == State.CLOSED) {
+
+        if (currentState == State.OPEN) {
+            if (hasTimeoutExpired()) {
+                stateRef.compareAndSet(State.OPEN, State.HALF_OPEN);
                 return true;
             }
-            
-            if (currentState == State.OPEN) {
-                LocalDateTime lastFailure = lastFailureTime.get();
-                if (lastFailure != null && 
-                    LocalDateTime.now().minusSeconds(resetTimeout).isAfter(lastFailure)) {
-                    state.compareAndSet(State.OPEN, State.HALF_OPEN);
-                    return true;
-                }
-                return false;
+            return false;
+        }
+
+        // HALF_OPEN - allow one request
+        return true;
+    }
+
+    private void onSuccess() {
+        State currentState = stateRef.get();
+        if (currentState == State.HALF_OPEN) {
+            stateRef.compareAndSet(State.HALF_OPEN, State.CLOSED);
+            failures = 0;
+            metrics.counter("circuit.closed").inc();
+        }
+    }
+
+    private void onFailure() {
+        failures++;
+        lastFailureTime = System.currentTimeMillis();
+
+        if (failures >= failureThreshold) {
+            stateRef.set(State.OPEN);
+            metrics.counter("circuit.opened").inc();
+        }
+    }
+}
+```
+
+### Advanced Implementation with Sliding Window
+```java
+public class SlidingWindowCircuitBreaker {
+    private final Queue<Long> failureTimestamps;
+    private final int windowSize;
+    private final int failureThreshold;
+    private final Duration windowDuration;
+    
+    public synchronized boolean allowRequest() {
+        long now = System.currentTimeMillis();
+        
+        // Remove old timestamps
+        while (!failureTimestamps.isEmpty() && 
+               failureTimestamps.peek() < now - windowDuration.toMillis()) {
+            failureTimestamps.poll();
+        }
+        
+        return failureTimestamps.size() < failureThreshold;
+    }
+    
+    public synchronized void recordFailure() {
+        failureTimestamps.offer(System.currentTimeMillis());
+        
+        if (failureTimestamps.size() >= failureThreshold) {
+            transitionToOpen();
+        }
+    }
+}
+```
+
+### Circuit Breaker with Retry Policy
+```java
+public class CircuitBreakerWithRetry {
+    private final CircuitBreaker circuitBreaker;
+    private final RetryPolicy retryPolicy;
+    
+    public <T> T executeWithRetry(Supplier<T> supplier) {
+        return retryPolicy.execute(() -> {
+            try {
+                return circuitBreaker.execute(supplier);
+            } catch (CircuitBreakerOpenException e) {
+                // Don't retry if circuit is open
+                throw new NonRetryableException(e);
+            } catch (Exception e) {
+                // Retry other exceptions based on policy
+                throw new RetryableException(e);
             }
-            
-            return true; // HALF_OPEN state allows one test request
-        }
+        });
+    }
+}
+```
+
+## 🤔 Decision Criteria & Evaluation
+
+### Circuit Breaker Types Comparison
+
+| Type | Pros | Cons | Use Case |
+|------|------|------|----------|
+| Count-Based | Simple to implement | Less accurate | Basic protection |
+| Time-Based | More precise | More complex | Production systems |
+| Hybrid | Best accuracy | Most complex | Critical systems |
+
+### Implementation Comparison Matrix
+
+| Feature | Simple | Advanced | Enterprise |
+|---------|---------|-----------|------------|
+| Failure Detection | Count-based | Time-window | ML-based |
+| State Management | In-memory | Distributed | Hierarchical |
+| Monitoring | Basic metrics | Detailed metrics | Full observability |
+| Recovery | Fixed timeout | Adaptive | Self-healing |
+
+## 📊 Performance Metrics & Optimization
+
+### Key Metrics
+```java
+public class CircuitBreakerMetrics {
+    private final MetricRegistry metrics;
+    
+    public void recordExecution(String operation, State state) {
+        metrics.counter(
+            String.format("circuit_breaker.%s.%s", 
+                operation, 
+                state.name().toLowerCase())
+        ).inc();
+    }
+    
+    public void recordLatency(String operation, long duration) {
+        metrics.histogram(
+            String.format("circuit_breaker.%s.latency", 
+                operation)
+        ).update(duration);
+    }
+    
+    public void recordStateTransition(State from, State to) {
+        metrics.counter(
+            String.format("circuit_breaker.transition.%s_to_%s",
+                from.name().toLowerCase(),
+                to.name().toLowerCase())
+        ).inc();
+    }
+}
+```
+
+## ⚠️ Anti-Patterns
+
+### 1. Global Circuit Breaker
+❌ **Wrong**:
+```java
+public class GlobalCircuitBreaker {
+    private static final CircuitBreaker INSTANCE = 
+        new CircuitBreaker();
+    
+    public static CircuitBreaker getInstance() {
+        return INSTANCE;  // Single breaker for all operations
+    }
+}
+```
+
+✅ **Correct**:
+```java
+public class ServiceCircuitBreakers {
+    private final Map<String, CircuitBreaker> breakers;
+    
+    public CircuitBreaker getBreaker(String service) {
+        return breakers.computeIfAbsent(service,
+            k -> new CircuitBreaker(
+                getConfigForService(service)
+            ));
+    }
+}
+```
+
+### 2. Incorrect Failure Counting
+❌ **Wrong**:
+```java
+public class SimpleFailureCounter {
+    private int failures = 0;
+    
+    public void recordFailure() {
+        failures++;  // No time window consideration
+    }
+}
+```
+
+✅ **Correct**:
+```java
+public class WindowedFailureCounter {
+    private final Queue<Long> failures = new LinkedList<>();
+    private final Duration window;
+    
+    public void recordFailure() {
+        long now = System.currentTimeMillis();
+        failures.offer(now);
         
-        private void onSuccess() {
-            failureCount.set(0);
-            state.set(State.CLOSED);
+        // Remove old failures
+        while (!failures.isEmpty() && 
+               failures.peek() < now - window.toMillis()) {
+            failures.poll();
         }
+    }
+    
+    public int getFailureCount() {
+        return failures.size();
+    }
+}
+```
+
+## 💡 Best Practices
+
+### 1. Configuration Management
+```java
+public class CircuitBreakerConfig {
+    @Builder
+    public static class Config {
+        private final int failureThreshold;
+        private final Duration windowDuration;
+        private final Duration openStateTimeout;
+        private final Predicate<Throwable> failureCondition;
+        private final List<Class<? extends Throwable>> ignoredExceptions;
+    }
+    
+    public static Config forHttpService() {
+        return Config.builder()
+            .failureThreshold(5)
+            .windowDuration(Duration.ofMinutes(1))
+            .openStateTimeout(Duration.ofSeconds(30))
+            .failureCondition(e -> e instanceof IOException)
+            .ignoredExceptions(Arrays.asList(
+                ValidationException.class))
+            .build();
+    }
+}
+```
+
+### 2. Monitoring and Alerting
+```java
+public class CircuitBreakerMonitor {
+    private final AlertService alertService;
+    private final MetricRegistry metrics;
+    
+    public void monitorStateTransitions(
+        String service,
+        State oldState,
+        State newState
+    ) {
+        metrics.counter(
+            "circuit_breaker.state_change"
+        ).inc();
         
-        private void onFailure() {
-            lastFailureTime.set(LocalDateTime.now());
-            if (failureCount.incrementAndGet() >= failureThreshold) {
-                state.set(State.OPEN);
+        if (newState == State.OPEN) {
+            alertService.sendAlert(
+                String.format(
+                    "Circuit breaker opened for service: %s",
+                    service
+                )
+            );
+        }
+    }
+}
+```
+
+## 🧪 Testing Strategies
+
+### Circuit Breaker Tests
+```java
+@Test
+public void testCircuitBreakerStates() {
+    CircuitBreaker breaker = new CircuitBreaker(
+        CircuitBreakerConfig.builder()
+            .failureThreshold(2)
+            .timeout(Duration.ofSeconds(1))
+            .build()
+    );
+    
+    // Test transition to open
+    simulateFailures(breaker, 2);
+    assertEquals(State.OPEN, breaker.getState());
+    
+    // Test half-open after timeout
+    await().atMost(2, TimeUnit.SECONDS)
+        .until(() -> breaker.getState() == State.HALF_OPEN);
+    
+    // Test successful recovery
+    breaker.execute(() -> "success");
+    assertEquals(State.CLOSED, breaker.getState());
+}
+
+@Test
+public void testConcurrentAccess() {
+    CircuitBreaker breaker = new CircuitBreaker();
+    ExecutorService executor = 
+        Executors.newFixedThreadPool(10);
+    
+    List<Future<?>> futures = new ArrayList<>();
+    for (int i = 0; i < 100; i++) {
+        futures.add(executor.submit(() -> {
+            try {
+                breaker.execute(() -> {
+                    // Simulate work
+                    Thread.sleep(10);
+                    return null;
+                });
+            } catch (Exception e) {
+                // Expected for some calls
             }
+        }));
+    }
+    
+    // Verify all calls complete without errors
+    futures.forEach(f -> {
+        try {
+            f.get();
+        } catch (Exception e) {
+            fail("Unexpected error: " + e);
         }
-        
-        private <T> T handleFailedCircuit() throws Exception {
-            throw new CircuitBreakerException("Circuit breaker is open");
-        }
-    }
+    });
+}
+```
 
-    @FunctionalInterface
-    interface ServiceCall<T> {
-        T execute() throws Exception;
-    }
+## 🌍 Real-world Use Cases
 
-    class CircuitBreakerException extends Exception {
-        public CircuitBreakerException(String message) {
-            super(message);
-        }
-    }
-    ```
-  </TabItem>
-  <TabItem value="go" label="Go">
-    ```go
-    package circuitbreaker
+### 1. Netflix Hystrix
+- Service protection
+- Fallback mechanisms
+- Real-time monitoring
+- Dashboard visualization
 
-    import (
-        "errors"
-        "sync"
-        "sync/atomic"
-        "time"
-    )
+### 2. Azure Circuit Breaker
+- Microservices protection
+- Auto-scaling integration
+- Retry policies
+- Telemetry integration
 
-    type State int32
+### 3. Spring Circuit Breaker
+- Declarative circuit breaking
+- Integration with Spring Cloud
+- Multiple backend support
+- Metrics exposure
 
-    const (
-        StateClosed State = iota
-        StateOpen
-        StateHalfOpen
-    )
+## 📚 References
 
-    type CircuitBreaker struct {
-        state         State
-        mutex         sync.RWMutex
-        failureCount  int32
-        lastFailure   time.Time
-        
-        failureThreshold int32
-        resetTimeout     time.Duration
-    }
+### Books
+- "Release It!" by Michael Nygard
+- "Building Microservices" by Sam Newman
 
-    func NewCircuitBreaker(failureThreshold int32, resetTimeout time.Duration) *CircuitBreaker {
-        return &CircuitBreaker{
-            state:            StateClosed,
-            failureThreshold: failureThreshold,
-            resetTimeout:     resetTimeout,
-        }
-    }
-
-    func (cb *CircuitBreaker) Execute(operation func() (interface{}, error)) (interface{}, error) {
-        if !cb.shouldAllowExecution() {
-            return nil, errors.New("circuit breaker is open")
-        }
-
-        result, err := operation()
-        if err != nil {
-            cb.onFailure()
-            return nil, err
-        }
-
-        cb.onSuccess()
-        return result, nil
-    }
-
-    func (cb *CircuitBreaker) shouldAllowExecution() bool {
-        cb.mutex.RLock()
-        defer cb.mutex.RUnlock()
-
-        switch cb.state {
-        case StateClosed:
-            return true
-        case StateOpen:
-            if time.Since(cb.lastFailure) > cb.resetTimeout {
-                cb.mutex.RUnlock()
-                cb.mutex.Lock()
-                cb.state = StateHalfOpen
-                cb.mutex.Unlock()
-                cb.mutex.RLock()
-                return true
-            }
-            return false
-        case StateHalfOpen:
-            return true
-        default:
-            return false
-        }
-    }
-
-    func (cb *CircuitBreaker) onSuccess() {
-        cb.mutex.Lock()
-        defer cb.mutex.Unlock()
-
-        atomic.StoreInt32(&cb.failureCount, 0)
-        cb.state = StateClosed
-    }
-
-    func (cb *CircuitBreaker) onFailure() {
-        cb.mutex.Lock()
-        defer cb.mutex.Unlock()
-
-        cb.lastFailure = time.Now()
-        if atomic.AddInt32(&cb.failureCount, 1) >= cb.failureThreshold {
-            cb.state = StateOpen
-        }
-    }
-    ```
-  </TabItem>
-</Tabs>
-
-## 🤝 Related Patterns
-
-1. **Retry Pattern**
-   - Works with Circuit Breaker to attempt failed operations
-   - Circuit Breaker prevents unnecessary retries
-
-2. **Bulkhead Pattern**
-   - Isolates components to prevent cascade failures
-   - Complements Circuit Breaker's failure isolation
-
-3. **Fallback Pattern**
-   - Provides alternative service when circuit is open
-   - Ensures system degradation is graceful
-
-## 🎯 Best Practices
-
-### Configuration
-- Set appropriate thresholds based on service SLAs
-- Configure timeouts based on operation complexity
-- Use different thresholds for different types of failures
-
-### Monitoring
-- Track circuit state changes
-- Monitor failure rates and patterns
-- Log circuit breaker events for analysis
-
-### Testing
-- Test all state transitions
-- Simulate various failure scenarios
-- Verify fallback behavior
-
-## ⚠️ Common Pitfalls
-
-1. **Incorrect Thresholds**
-   - *Problem*: Too low/high failure thresholds
-   - *Solution*: Tune based on actual service behavior
-
-2. **Missing Fallbacks**
-   - *Problem*: No alternative when circuit opens
-   - *Solution*: Implement meaningful fallback logic
-
-3. **Race Conditions**
-   - *Problem*: Inconsistent state transitions
-   - *Solution*: Use proper synchronization
-
-## 🎉 Use Cases
-
-### 1. Payment Processing
-- Protects against payment gateway failures
-- Prevents customer transaction timeouts
-- Provides graceful degradation options
-
-### 2. API Gateway
-- Manages multiple downstream services
-- Prevents cascade failures
-- Enables granular service monitoring
-
-### 3. Microservices Communication
-- Handles inter-service communication
-- Protects against slow services
-- Maintains system stability
-
-## 🔍 Deep Dive Topics
-
-### Thread Safety
-- Use atomic operations for counters
-- Implement proper state synchronization
-- Handle concurrent state transitions
-
-### Distributed Systems Integration
-- Consider network latency in timeouts
-- Handle distributed state management
-- Implement cross-node circuit breaker states
-
-### Performance Considerations
-- Minimize synchronization overhead
-- Optimize state checks
-- Use efficient failure detection
-
-## 📚 Additional Resources
-
-### References
-1. "Release It!" by Michael Nygard
-2. "Building Microservices" by Sam Newman
-3. Netflix Tech Blog - Hystrix Circuit Breaker
-
-### Tools
-- Resilience4j
-- Hystrix (Netflix)
-- Microsoft's Polly
-
-## ❓ FAQs
-
-**Q: How do I choose the right threshold values?**
-A: Start with historical error rates and adjust based on monitoring data. Consider service SLAs and acceptable failure rates.
-
-**Q: Should I use a single circuit breaker for all operations?**
-A: No, use separate circuit breakers for different operations or dependencies to prevent unrelated failures from affecting each other.
-
-**Q: How does Circuit Breaker handle slow responses?**
-A: Implement timeouts in combination with Circuit Breaker to handle slow responses as failures.
-
-**Q: Can Circuit Breaker work across multiple instances?**
-A: Yes, using distributed state management systems or service meshes for coordination.
-
-**Q: How do I test Circuit Breaker behavior?**
-A: Use chaos engineering tools and fault injection to simulate failures and verify Circuit Breaker behavior.
+### Online Resources
+- [Netflix Hystrix Wiki](https://github.com/Netflix/Hystrix/wiki)
+- [Microsoft Circuit Breaker Pattern](https://docs.microsoft.com/en-us/azure/architecture/patterns/circuit-breaker)
+- [Martin Fowler's Circuit Breaker](https://martinfowler.com/bliki/CircuitBreaker.html)

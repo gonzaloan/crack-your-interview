@@ -3,412 +3,559 @@ sidebar_position: 1
 title: "Project Structure"
 description: "Clean Architecture Implementation - Project Structure"
 ---
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
+# 📁 Clean Architecture Project Structure Documentation
 
-# 📁 Clean Architecture Project Structure
+## Overview and Project Organization <a name="overview"></a>
 
-## Overview
+### Core Principles
+- Separation of concerns
+- Independence of frameworks
+- Dependency rule compliance
+- Testability
+- Maintainability
+- Scalability
 
-Clean Architecture project structure organizes code in a way that emphasizes separation of concerns, maintainability, and testability. The structure follows the dependency rule, with dependencies pointing inward toward the core business logic.
-
-### Real World Analogy
-Think of a large city's urban planning. At the center is the historical district (core domain), surrounded by residential areas (use cases), then commercial zones (interfaces), and finally the outer infrastructure (frameworks). Each zone has specific rules and purposes, with clear boundaries and controlled access between them.
-
-## 🎯 Key Concepts
-
-### Architectural Layers
-
+### Project Layers
 ```mermaid
 graph TD
-    A[Web/UI/External Interfaces] --> B[Controllers/Presenters]
-    B --> C[Use Cases/Services]
-    C --> D[Entities/Core Domain]
-    style D fill:#f9f,stroke:#333
-    style C fill:#bbf,stroke:#333
-    style B fill:#dfd,stroke:#333
-    style A fill:#fdd,stroke:#333
+    A[Presentation Layer] --> B[Application Layer]
+    A --> C[Infrastructure Layer]
+    B --> D[Domain Layer]
+    C --> B
+    C --> D
+    
+    style A fill:#f9f,stroke:#333
+    style B fill:#bbf,stroke:#333
+    style C fill:#dfd,stroke:#333
+    style D fill:#fdd,stroke:#333
 ```
 
-### Directory Structure
+## Directory Structure <a name="structure"></a>
 
-```
+### Base Structure
+
+```plaintext
 src/
-├── domain/           # Enterprise Business Rules
-│   ├── entity/
-│   ├── model/
-│   └── value/
-├── application/      # Application Business Rules
-│   ├── usecase/
-│   ├── port/
-│   └── service/
-├── interface/        # Interface Adapters
-│   ├── controller/
-│   ├── presenter/
-│   └── repository/
-├── infrastructure/   # Frameworks & Drivers
-│   ├── config/
-│   ├── persistence/
-│   └── external/
-└── main/            # Entry Point & Configuration
+├── domain/                 # Enterprise business rules
+│   ├── entities/          # Business objects
+│   ├── value-objects/     # Immutable values
+│   └── interfaces/        # Core interfaces
+│
+├── application/           # Application business rules
+│   ├── use-cases/        # Business operations
+│   ├── interfaces/       # Port definitions
+│   └── dto/              # Data transfer objects
+│
+├── infrastructure/        # External interfaces
+│   ├── database/         # Database implementations
+│   ├── external/         # External services
+│   └── persistence/      # Repository implementations
+│
+├── presentation/         # UI/API Layer
+│   ├── api/             # REST API controllers
+│   ├── graphql/         # GraphQL resolvers
+│   └── web/             # Web controllers
+│
+├── common/              # Shared utilities
+│   ├── errors/         # Custom errors
+│   ├── types/          # Type definitions
+│   └── utils/          # Utility functions
+│
+└── config/             # Configuration management
+    ├── env/           # Environment configs
+    └── di/            # Dependency injection
 ```
 
-## 💻 Implementation
+### Detailed Domain Layer Structure
 
-### Project Structure Example
-
-<Tabs>
-  <TabItem value="java" label="Java">
-```java
-// Domain Layer
-package com.example.domain.entity;
-
-public class User {
-private final UserId id;
-private String name;
-private Email email;
-
-    // Domain logic and behavior
-}
-
-// Application Layer
-package com.example.application.port.in;
-
-public interface CreateUserUseCase {
-UserId createUser(CreateUserCommand command);
-}
-
-package com.example.application.port.out;
-
-public interface UserRepository {
-void save(User user);
-Optional<User> findById(UserId id);
-}
-
-package com.example.application.service;
-
-@Service
-@Transactional
-public class CreateUserService implements CreateUserUseCase {
-private final UserRepository userRepository;
-private final PasswordEncoder passwordEncoder;
-
-    public UserId createUser(CreateUserCommand command) {
-        // Application logic
-    }
-}
-
-// Interface Layer
-package com.example.interface.controller;
-
-@RestController
-@RequestMapping("/api/users")
-public class UserController {
-private final CreateUserUseCase createUserUseCase;
-
-    @PostMapping
-    public ResponseEntity<UserResponse> createUser(@RequestBody UserRequest request) {
-        // Controller logic
-    }
-}
-
-package com.example.interface.repository;
-
-@Repository
-public class JpaUserRepository implements UserRepository {
-private final SpringDataUserRepository repository;
-private final UserMapper mapper;
-
-    @Override
-    public void save(User user) {
-        // Repository implementation
-    }
-}
-
-// Infrastructure Layer
-package com.example.infrastructure.config;
-
-@Configuration
-public class PersistenceConfig {
-@Bean
-public DataSource dataSource() {
-// Configuration
-}
-}
-
-// Main Application
-package com.example;
-
-@SpringBootApplication
-public class Application {
-public static void main(String[] args) {
-SpringApplication.run(Application.class, args);
-}
-}
-```
-  </TabItem>
-  <TabItem value="go" label="Go">
-```go
-// Domain Layer
-package domain
-
-type User struct {
-    ID    UserID
-    Name  string
-    Email Email
-}
-
-// Application Layer
-package port
-
-type CreateUserUseCase interface {
-    CreateUser(cmd CreateUserCommand) (UserID, error)
-}
-
-type UserRepository interface {
-    Save(user *domain.User) error
-    FindByID(id UserID) (*domain.User, error)
-}
-
-package service
-
-type CreateUserService struct {
-    userRepo    port.UserRepository
-    passEncoder port.PasswordEncoder
-}
-
-func NewCreateUserService(
-    repo port.UserRepository,
-    encoder port.PasswordEncoder) *CreateUserService {
-    return &CreateUserService{
-        userRepo:    repo,
-        passEncoder: encoder,
-    }
-}
-
-func (s *CreateUserService) CreateUser(
-    cmd CreateUserCommand) (UserID, error) {
-    // Application logic
-}
-
-// Interface Layer
-package handler
-
-type UserHandler struct {
-    createUser port.CreateUserUseCase
-}
-
-func NewUserHandler(createUser port.CreateUserUseCase) *UserHandler {
-    return &UserHandler{
-        createUser: createUser,
-    }
-}
-
-func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
-    // Handler logic
-}
-
-package repository
-
-type UserRepository struct {
-    db     *sql.DB
-    mapper UserMapper
-}
-
-func (r *UserRepository) Save(user *domain.User) error {
-    // Repository implementation
-}
-
-// Infrastructure Layer
-package config
-
-type Config struct {
-    DB   DatabaseConfig
-    HTTP HTTPConfig
-}
-
-func LoadConfig() (*Config, error) {
-    // Configuration loading
-}
-
-// Main Application
-package main
-
-func main() {
-    cfg := config.MustLoad()
-    
-    db := initDB(cfg.DB)
-    repo := repository.NewUserRepository(db)
-    service := service.NewCreateUserService(repo)
-    handler := handler.NewUserHandler(service)
-    
-    server := NewServer(handler)
-    server.Start()
-}
-```
-  </TabItem>
-</Tabs>
-
-## 🔄 Related Patterns
-
-1. **Hexagonal Architecture (Ports and Adapters)**
-    - Similar layering concept
-    - Focus on ports and adapters
-    - Complements Clean Architecture structure
-
-2. **DDD Layered Architecture**
-    - Domain-centric approach
-    - Strategic and tactical patterns
-    - Natural fit with Clean Architecture
-
-3. **CQRS Pattern**
-    - Separates read and write operations
-    - Can be implemented within Clean Architecture
-    - Enhances scalability
-
-## ✅ Best Practices
-
-### Project Organization
-1. Follow consistent naming conventions
-2. Maintain clear package boundaries
-3. Use meaningful directory names
-4. Keep related files together
-
-### Module Dependencies
-1. Enforce dependency rules
-2. Use interfaces for abstraction
-3. Implement proper dependency injection
-4. Maintain modular independence
-
-### Code Organization
-1. Group by feature within layers
-2. Use consistent file naming
-3. Implement clean interfaces
-4. Maintain proper visibility
-
-## ⚠️ Common Pitfalls
-
-1. **Circular Dependencies**
-    - Symptom: Layers depending on each other
-    - Solution: Enforce dependency rule strictly
-
-2. **Feature Scatter**
-    - Symptom: Related code spread across layers
-    - Solution: Organize by feature within layers
-
-3. **Leaky Abstractions**
-    - Symptom: Implementation details in interfaces
-    - Solution: Design proper abstractions
-
-4. **Over-engineering**
-    - Symptom: Too many layers/abstractions
-    - Solution: Keep it simple, follow YAGNI
-
-## 🎯 Use Cases
-
-### 1. E-commerce Platform
-```mermaid
-graph TD
-    A[Product Module] --> B[Order Module]
-    B --> C[Payment Module]
-    C --> D[Shipping Module]
+```plaintext
+domain/
+├── entities/
+│   ├── user/
+│   │   ├── user.entity.ts
+│   │   ├── user.types.ts
+│   │   └── user.spec.ts
+│   └── order/
+│       ├── order.entity.ts
+│       ├── order.types.ts
+│       └── order.spec.ts
+│
+├── value-objects/
+│   ├── money.vo.ts
+│   ├── email.vo.ts
+│   └── address.vo.ts
+│
+├── interfaces/
+│   ├── repositories/
+│   │   ├── user.repository.ts
+│   │   └── order.repository.ts
+│   └── services/
+│       ├── payment.service.ts
+│       └── notification.service.ts
+│
+└── events/
+    ├── order-created.event.ts
+    └── user-registered.event.ts
 ```
 
-### 2. Banking System
-- Account management
-- Transaction processing
-- Reporting system
+### Application Layer Organization
 
-### 3. Healthcare Application
-- Patient records
-- Appointment scheduling
-- Billing system
+```plaintext
+application/
+├── use-cases/
+│   ├── user/
+│   │   ├── create-user/
+│   │   │   ├── create-user.usecase.ts
+│   │   │   ├── create-user.dto.ts
+│   │   │   └── create-user.spec.ts
+│   │   └── update-user/
+│   │       ├── update-user.usecase.ts
+│   │       ├── update-user.dto.ts
+│   │       └── update-user.spec.ts
+│   └── order/
+│       ├── create-order/
+│       └── cancel-order/
+│
+├── interfaces/
+│   ├── repositories/
+│   └── services/
+│
+└── dto/
+    ├── user.dto.ts
+    └── order.dto.ts
+```
 
-## 🔍 Deep Dive Topics
+## Module Organization <a name="modules"></a>
 
-### Module Communication
+### Feature Module Structure
 
-1. **Event-Based Communication**
-```java
-// Domain Events
-public interface DomainEvent {}
+```typescript
+// users/user.module.ts
+@Module({
+    imports: [
+        TypeOrmModule.forFeature([UserEntity]),
+        CommonModule
+    ],
+    providers: [
+        {
+            provide: 'UserRepository',
+            useClass: UserRepositoryImpl
+        },
+        {
+            provide: CreateUserUseCase,
+            useFactory: (userRepo) => new CreateUserUseCase(userRepo),
+            inject: ['UserRepository']
+        },
+        {
+            provide: UpdateUserUseCase,
+            useFactory: (userRepo) => new UpdateUserUseCase(userRepo),
+            inject: ['UserRepository']
+        }
+    ],
+    controllers: [UserController],
+    exports: ['UserRepository']
+})
+export class UserModule {}
+```
 
-public class UserCreatedEvent implements DomainEvent {
-    private final UserId userId;
-    
-    // Event details
+### Domain Module Example
+
+```typescript
+// domain/user/user.module.ts
+export interface User {
+    id: string;
+    email: Email;
+    name: string;
+    status: UserStatus;
 }
 
-// Event Publisher
-public interface EventPublisher {
-    void publish(DomainEvent event);
+export class UserEntity implements User {
+    constructor(
+        public readonly id: string,
+        public readonly email: Email,
+        public name: string,
+        public status: UserStatus
+    ) {}
+
+    activate(): void {
+        if (this.status === UserStatus.PENDING) {
+            this.status = UserStatus.ACTIVE;
+        } else {
+            throw new InvalidOperationError(
+                'User must be in PENDING status to activate'
+            );
+        }
+    }
+
+    update(data: Partial<User>): void {
+        Object.assign(this, data);
+    }
 }
 
-// Event Handler
-@Component
-public class UserCreatedHandler {
-    @EventListener
-    public void handle(UserCreatedEvent event) {
-        // Handle event
+export interface UserRepository {
+    save(user: User): Promise<User>;
+    findById(id: string): Promise<User | null>;
+    findByEmail(email: Email): Promise<User | null>;
+}
+```
+
+### Use Case Module Example
+
+```typescript
+// application/use-cases/user/create-user/create-user.usecase.ts
+export interface CreateUserRequest {
+    email: string;
+    name: string;
+    password: string;
+}
+
+export interface CreateUserResponse {
+    id: string;
+    email: string;
+    name: string;
+    status: UserStatus;
+}
+
+export class CreateUserUseCase implements UseCase<CreateUserRequest, CreateUserResponse> {
+    constructor(
+        private readonly userRepository: UserRepository,
+        private readonly passwordHasher: PasswordHasher,
+        private readonly eventBus: EventBus
+    ) {}
+
+    async execute(request: CreateUserRequest): Promise<CreateUserResponse> {
+        // Validate email format
+        const email = new Email(request.email);
+
+        // Check if user exists
+        const existingUser = await this.userRepository.findByEmail(email);
+        if (existingUser) {
+            throw new UserAlreadyExistsError(email.value);
+        }
+
+        // Create user entity
+        const user = new UserEntity({
+            id: generateId(),
+            email,
+            name: request.name,
+            status: UserStatus.PENDING,
+            passwordHash: await this.passwordHasher.hash(request.password)
+        });
+
+        // Save user
+        const savedUser = await this.userRepository.save(user);
+
+        // Publish event
+        await this.eventBus.publish(new UserCreatedEvent(savedUser));
+
+        // Return response
+        return {
+            id: savedUser.id,
+            email: savedUser.email.value,
+            name: savedUser.name,
+            status: savedUser.status
+        };
     }
 }
 ```
 
-### Dependency Management
+### Infrastructure Module Example
 
-1. **Module Dependencies**
-```xml
-<!-- Maven module structure -->
-<modules>
-    <module>domain</module>
-    <module>application</module>
-    <module>interface</module>
-    <module>infrastructure</module>
-</modules>
+```typescript
+// infrastructure/persistence/user/user.repository.ts
+@Injectable()
+export class UserRepositoryImpl implements UserRepository {
+    constructor(
+        @InjectRepository(UserEntity)
+        private readonly repository: Repository<UserEntity>
+    ) {}
+
+    async save(user: User): Promise<User> {
+        const userEntity = this.repository.create(user);
+        return this.repository.save(userEntity);
+    }
+
+    async findById(id: string): Promise<User | null> {
+        const user = await this.repository.findOne({ where: { id } });
+        return user ? this.toDomain(user) : null;
+    }
+
+    private toDomain(entity: UserEntity): User {
+        return new User({
+            id: entity.id,
+            email: new Email(entity.email),
+            name: entity.name,
+            status: entity.status
+        });
+    }
+}
 ```
 
-### Performance Considerations
+## Configuration Management <a name="configuration"></a>
 
-1. **Package Organization for Performance**
-```java
-// Feature-based package structure
-com.example.user
-    ├── domain
-    ├── application
-    ├── interface
-    └── infrastructure
+### Environment Configuration
+
+```typescript
+// config/env/env.config.ts
+@Injectable()
+export class EnvironmentConfig {
+    private readonly config: Record<string, any>;
+
+    constructor() {
+        this.config = {
+            database: {
+                host: process.env.DB_HOST,
+                port: parseInt(process.env.DB_PORT || '5432'),
+                username: process.env.DB_USERNAME,
+                password: process.env.DB_PASSWORD,
+                database: process.env.DB_NAME
+            },
+            app: {
+                port: parseInt(process.env.APP_PORT || '3000'),
+                env: process.env.NODE_ENV || 'development'
+            }
+        };
+    }
+
+    get<T>(key: string): T {
+        return get(this.config, key);
+    }
+}
 ```
 
-## 📚 Additional Resources
+### Dependency Injection Configuration
 
-### Build Tools
-1. Maven (Java)
-2. Gradle
-3. Go Modules
-4. Make
+```typescript
+// config/di/container.config.ts
+export const container = new Container();
 
-### Project Templates
-1. Spring Boot Clean Architecture template
-2. Go Clean Architecture template
-3. Project generator tools
+// Register core services
+container.register(
+    'Logger',
+    { useClass: LoggerService },
+    { lifecycle: Lifecycle.Singleton }
+);
 
-### References
-1. [Clean Architecture Book](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
-2. [Implementing Clean Architecture](https://www.freecodecamp.org/news/implementing-clean-architecture-using-spring-boot/)
+container.register(
+    'EventBus',
+    { useClass: EventBusService },
+    { lifecycle: Lifecycle.Singleton }
+);
 
-## ❓ FAQs
+// Register repositories
+container.register(
+    'UserRepository',
+    { useClass: UserRepositoryImpl },
+    { lifecycle: Lifecycle.Singleton }
+);
 
-### Q: How strict should package boundaries be?
-A: Very strict. Dependencies should only point inward.
+// Register use cases
+container.register(
+    'CreateUserUseCase',
+    {
+        useFactory: (container) => {
+            return new CreateUserUseCase(
+                container.resolve('UserRepository'),
+                container.resolve('PasswordHasher'),
+                container.resolve('EventBus')
+            );
+        }
+    },
+    { lifecycle: Lifecycle.Transient }
+);
+```
 
-### Q: Where should configuration files go?
-A: In the infrastructure layer, with interfaces in application layer.
+## Best Practices & Guidelines <a name="best-practices"></a>
 
-### Q: How to handle cross-cutting concerns?
-A: Use aspects or decorators at appropriate layer boundaries.
+### 1. File Naming Conventions
 
-### Q: Should I create separate modules for each layer?
-A: Yes, for large projects. Small projects can use packages.
+```plaintext
+# Pattern: <name>.<type>.<extension>
 
-### Q: How to handle shared code?
-A: Create a shared kernel or common module while maintaining dependency rules.
+✅ Good Examples:
+user.entity.ts
+create-user.usecase.ts
+user.repository.ts
+user-created.event.ts
+
+❌ Bad Examples:
+user.ts
+createUser.ts
+UserRepo.ts
+userCreated.ts
+```
+
+### 2. Module Organization
+
+```typescript
+// Feature-based organization
+feature/
+├── domain/
+│   └── feature.entity.ts
+├── application/
+│   └── use-cases/
+│       └── feature.usecase.ts
+├── infrastructure/
+│   └── feature.repository.ts
+└── presentation/
+    └── feature.controller.ts
+
+// Layer-based organization
+src/
+├── domain/
+│   └── feature/
+│       └── feature.entity.ts
+├── application/
+│   └── feature/
+│       └── feature.usecase.ts
+└── infrastructure/
+    └── feature/
+        └── feature.repository.ts
+```
+
+## Anti-Patterns <a name="anti-patterns"></a>
+
+### ❌ Common Mistakes
+
+1. **Mixed Layer Dependencies**
+```typescript
+// Bad: Domain entity depending on infrastructure
+import { Column, Entity } from 'typeorm';
+
+@Entity()
+export class User {
+    @Column()
+    email: string;
+}
+```
+
+2. **Direct Framework Usage**
+```typescript
+// Bad: Use case directly using framework
+export class CreateUserUseCase {
+    @Inject()
+    private userRepository: UserRepository;
+}
+```
+
+### ✅ Correct Implementations
+
+1. **Clean Layer Separation**
+```typescript
+// Domain Entity
+export class User {
+    constructor(
+        public readonly id: string,
+        public readonly email: Email,
+        public readonly name: string
+    ) {}
+}
+
+// Infrastructure
+@Entity('users')
+export class UserSchema {
+    @Column()
+    email: string;
+
+    toDomain(): User {
+        return new User(this.id, new Email(this.email), this.name);
+    }
+}
+```
+
+2. **Proper Dependency Injection**
+```typescript
+export class CreateUserUseCase {
+    constructor(
+        private readonly userRepository: UserRepository,
+        private readonly eventBus: EventBus
+    ) {}
+}
+```
+
+## Real-world Examples <a name="examples"></a>
+
+### E-commerce System Structure
+
+```plaintext
+src/
+├── modules/
+│   ├── orders/
+│   │   ├── domain/
+│   │   │   ├── order.entity.ts
+│   │   │   ├── line-item.entity.ts
+│   │   │   └── order-status.enum.ts
+│   │   ├── application/
+│   │   │   ├── create-order/
+│   │   │   │   ├── create-order.usecase.ts
+│   │   │   │   └── create-order.dto.ts
+│   │   │   └── cancel-order/
+│   │   ├── infrastructure/
+│   │   │   ├── order.repository.ts
+│   │   │   └── order.schema.ts
+│   │   └── presentation/
+│   │       └── order.controller.ts
+│   └── products/
+│       └── ...
+│
+├── shared/
+│   ├── domain/
+│   │   ├── value-objects/
+│   │   └── interfaces/
+│   ├── infrastructure/
+│   │   ├── database/
+│   │   └── messaging/
+│   └── utils/
+│
+└── config/
+    ├── database.config.ts
+    └── app.config.ts
+```
+
+## FAQ Section <a name="faq"></a>
+
+1. **Q: How to handle shared code between modules?**
+   A: Create a shared module:
+   ```plaintext
+   shared/
+   ├── domain/
+   │   └── value-objects/
+   ├── infrastructure/
+   │   └── common-services/
+   └── utils/
+   ```
+
+2. **Q: Where to put validation logic?**
+   A:
+   - Domain validation in entities
+   - Input validation in use cases
+   - Schema validation in controllers
+
+3. **Q: How to organize tests?**
+   A: Follow the same structure as source code:
+   ```plaintext
+   src/
+   ├── domain/
+   │   └── __tests__/
+   ├── application/
+   │   └── __tests__/
+   └── infrastructure/
+       └── __tests__/
+   ```
+
+## References <a name="references"></a>
+
+### Books
+- "Clean Architecture" by Robert C. Martin
+- "Implementing Domain-Driven Design" by Vaughn Vernon
+- "Domain-Driven Design" by Eric Evans
+
+### Articles
+- "Clean Architecture Project Structure"
+- "Organizing Code in Clean Architecture"
+- "Module Organization Patterns"
+
+### Online Resources
+- Clean Architecture GitHub Examples
+- DDD Sample Projects
+- Enterprise Architecture Patterns

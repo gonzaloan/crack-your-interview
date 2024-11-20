@@ -3,409 +3,556 @@ sidebar_position: 3
 title: "Dependency Management"
 description: "Clean Architecture Implementation - Dependency Management"
 ---
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
+# 🔄 Clean Architecture Dependency Management Documentation
 
-# 🔄 Dependency Management in Clean Architecture
+## Overview and Problem Statement <a name="overview"></a>
 
-## Overview
+### Definition
+Dependency Management in Clean Architecture focuses on organizing and controlling dependencies between different layers while adhering to the Dependency Rule: source code dependencies must point only inward, toward higher-level policies.
 
-Dependency Management in Clean Architecture focuses on organizing and controlling dependencies between different layers while adhering to the Dependency Rule. The goal is to maintain a system where dependencies point inward, toward the core domain, ensuring that inner circles are independent of outer circles.
+### Problems Solved
+- Circular dependencies
+- Tight coupling
+- Testing complexity
+- Change propagation
+- Technical debt
+- Framework lock-in
 
-### Real World Analogy
-Think of a modern hospital's organizational structure. The core medical staff (surgeons, doctors) doesn't depend on administrative systems, but administrative systems depend on medical staff information. Support services adapt to medical requirements, not vice versa. Similarly, in Clean Architecture, outer layers adapt to inner layers' needs.
+### Business Value
+- Reduced maintenance costs
+- Improved system flexibility
+- Better testability
+- Easier technology migrations
+- Enhanced system longevity
 
-## 🎯 Key Concepts
+## Detailed Solution/Architecture <a name="solution"></a>
 
-### Dependency Flow
+### Dependency Flow Diagram
 
 ```mermaid
 graph TD
-    A[External Interfaces] --> B[Interface Adapters]
-    B --> C[Application Business Rules]
-    C --> D[Enterprise Business Rules]
-    style D fill:#f9f,stroke:#333
-    style C fill:#bbf,stroke:#333
-    style B fill:#dfd,stroke:#333
-    style A fill:#fdd,stroke:#333
+    A[UI/Controllers] -->|depends on| B[Use Cases/Interactors]
+    A -->|depends on| C[Interface Adapters]
+    B -->|depends on| D[Entities]
+    C -->|depends on| B
+    C -->|depends on| D
+    
+    style A fill:#f9f,stroke:#333
+    style B fill:#bbf,stroke:#333
+    style C fill:#dfd,stroke:#333
+    style D fill:#fdd,stroke:#333
 ```
 
-### Core Principles
+### Core Concepts
 
-1. **Dependency Rule**
-    - Inner layers know nothing about outer layers
-    - Dependencies point inward
-    - Crossing boundaries through interfaces
+1. **Dependency Inversion Principle (DIP)**
+2. **Interface Segregation**
+3. **Dependency Injection**
+4. **Ports and Adapters**
 
-2. **Dependency Inversion**
-    - High-level modules independent of low-level modules
-    - Both depend on abstractions
+## Technical Implementation <a name="implementation"></a>
 
-3. **Interface Segregation**
-    - Client-specific interfaces
-    - Minimal dependencies
+### 1. Dependency Container Setup
 
-## 💻 Implementation
+```typescript
+// 1. Container configuration
+class Container {
+    private static instance: Container;
+    private container: Map<string, Provider>;
 
-### Dependency Management Example
-
-<Tabs>
-  <TabItem value="java" label="Java">
-```java
-// Domain Layer (Innermost)
-package com.example.domain;
-
-public class Order {
-private final OrderId id;
-private final CustomerId customerId;
-private final Money total;
-private OrderStatus status;
-
-    // Domain logic
-}
-
-// Application Layer Ports (Interfaces)
-package com.example.application.port;
-
-public interface OrderRepository {
-void save(Order order);
-Optional<Order> findById(OrderId id);
-}
-
-public interface PaymentGateway {
-PaymentResult processPayment(Order order);
-}
-
-// Application Service
-package com.example.application.service;
-
-@UseCase
-public class OrderProcessor {
-private final OrderRepository orderRepository;
-private final PaymentGateway paymentGateway;
-private final EventPublisher eventPublisher;
-
-    public OrderProcessor(
-            OrderRepository orderRepository,
-            PaymentGateway paymentGateway,
-            EventPublisher eventPublisher) {
-        this.orderRepository = orderRepository;
-        this.paymentGateway = paymentGateway;
-        this.eventPublisher = eventPublisher;
+    private constructor() {
+        this.container = new Map();
     }
 
-    @Transactional
-    public OrderId processOrder(CreateOrderCommand command) {
+    static getInstance(): Container {
+        if (!Container.instance) {
+            Container.instance = new Container();
+        }
+        return Container.instance;
+    }
+
+    register<T>(token: string, provider: Provider<T>): void {
+        this.container.set(token, provider);
+    }
+
+    resolve<T>(token: string): T {
+        const provider = this.container.get(token);
+        if (!provider) {
+            throw new Error(`No provider found for ${token}`);
+        }
+        return provider.get();
+    }
+}
+
+// 2. Provider implementations
+interface Provider<T> {
+    get(): T;
+}
+
+class SingletonProvider<T> implements Provider<T> {
+    private instance: T | null = null;
+    
+    constructor(private factory: () => T) {}
+    
+    get(): T {
+        if (!this.instance) {
+            this.instance = this.factory();
+        }
+        return this.instance;
+    }
+}
+
+class TransientProvider<T> implements Provider<T> {
+    constructor(private factory: () => T) {}
+    
+    get(): T {
+        return this.factory();
+    }
+}
+```
+
+### 2. Layer-specific Dependencies
+
+```typescript
+// 1. Entities (core domain) - No dependencies
+class Order {
+    constructor(
+        public readonly id: string,
+        public readonly items: OrderItem[],
+        public readonly total: Money,
+        public status: OrderStatus
+    ) {}
+
+    validateState(): boolean {
+        return this.items.length > 0 && this.total.amount > 0;
+    }
+}
+
+// 2. Use Cases - Depends on Entities and Ports
+interface OrderRepository {
+    save(order: Order): Promise<Order>;
+    findById(id: string): Promise<Order | null>;
+}
+
+class CreateOrderUseCase {
+    constructor(
+        private readonly orderRepository: OrderRepository,
+        private readonly paymentService: PaymentService
+    ) {}
+
+    async execute(request: CreateOrderRequest): Promise<CreateOrderResponse> {
         // Implementation
     }
 }
 
-// Infrastructure Layer
-package com.example.infrastructure.persistence;
+// 3. Interface Adapters - Depends on Use Cases
+class OrderRepositoryImpl implements OrderRepository {
+    constructor(private readonly database: Database) {}
 
-@Repository
-public class JpaOrderRepository implements OrderRepository {
-private final JpaOrderEntityRepository jpaRepository;
-private final OrderMapper mapper;
-
-    public JpaOrderRepository(
-            JpaOrderEntityRepository jpaRepository,
-            OrderMapper mapper) {
-        this.jpaRepository = jpaRepository;
-        this.mapper = mapper;
+    async save(order: Order): Promise<Order> {
+        // Implementation
     }
 
-    @Override
-    public void save(Order order) {
-        OrderEntity entity = mapper.toEntity(order);
-        jpaRepository.save(entity);
+    async findById(id: string): Promise<Order | null> {
+        // Implementation
     }
 }
 
-// Configuration Management
-@Configuration
-public class ApplicationConfig {
-@Bean
-public OrderProcessor orderProcessor(
-OrderRepository orderRepository,
-PaymentGateway paymentGateway,
-EventPublisher eventPublisher) {
-return new OrderProcessor(
-orderRepository,
-paymentGateway,
-eventPublisher
-);
-}
+// 4. Frameworks - Depends on Interface Adapters
+class OrderController {
+    constructor(
+        private readonly createOrder: CreateOrderUseCase,
+        private readonly getOrder: GetOrderUseCase
+    ) {}
 
-    @Bean
-    public OrderRepository orderRepository(
-            JpaOrderEntityRepository jpaRepository,
-            OrderMapper mapper) {
-        return new JpaOrderRepository(jpaRepository, mapper);
+    async createOrder(req: Request, res: Response): Promise<void> {
+        // Implementation
     }
 }
 ```
-  </TabItem>
-  <TabItem value="go" label="Go">
-```go
-// Domain Layer
-package domain
 
-type Order struct {
-    ID         OrderID
-    CustomerID CustomerID
-    Total      Money
-    Status     OrderStatus
-}
+### 3. Dependency Registration
 
-// Application Ports
-package port
+```typescript
+// Application bootstrap
+class ApplicationBootstrap {
+    private container: Container;
 
-type OrderRepository interface {
-    Save(order *domain.Order) error
-    FindByID(id domain.OrderID) (*domain.Order, error)
-}
+    constructor() {
+        this.container = Container.getInstance();
+        this.registerDependencies();
+    }
 
-type PaymentGateway interface {
-    ProcessPayment(order *domain.Order) (*PaymentResult, error)
-}
+    private registerDependencies(): void {
+        // Register infrastructure dependencies
+        this.container.register(
+            'Database',
+            new SingletonProvider(() => new PostgresDatabase())
+        );
 
-// Application Service
-package application
+        // Register repositories
+        this.container.register(
+            'OrderRepository',
+            new SingletonProvider(() => 
+                new OrderRepositoryImpl(
+                    this.container.resolve('Database')
+                )
+            )
+        );
 
-type OrderProcessor struct {
-    orderRepo  port.OrderRepository
-    payment    port.PaymentGateway
-    publisher  port.EventPublisher
-}
+        // Register use cases
+        this.container.register(
+            'CreateOrderUseCase',
+            new TransientProvider(() => 
+                new CreateOrderUseCase(
+                    this.container.resolve('OrderRepository'),
+                    this.container.resolve('PaymentService')
+                )
+            )
+        );
 
-func NewOrderProcessor(
-    orderRepo port.OrderRepository,
-    payment port.PaymentGateway,
-    publisher port.EventPublisher) *OrderProcessor {
-    
-    return &OrderProcessor{
-        orderRepo: orderRepo,
-        payment:   payment,
-        publisher: publisher,
+        // Register controllers
+        this.container.register(
+            'OrderController',
+            new SingletonProvider(() => 
+                new OrderController(
+                    this.container.resolve('CreateOrderUseCase'),
+                    this.container.resolve('GetOrderUseCase')
+                )
+            )
+        );
     }
 }
+```
 
-func (p *OrderProcessor) ProcessOrder(
-    cmd CreateOrderCommand) (domain.OrderID, error) {
+## Best Practices & Guidelines <a name="best-practices"></a>
+
+### 1. Interface Definition
+
+```typescript
+// 1. Keep interfaces focused and cohesive
+interface OrderRepository {
+    save(order: Order): Promise<Order>;
+    findById(id: string): Promise<Order | null>;
+    findByUserId(userId: string): Promise<Order[]>;
+    delete(id: string): Promise<void>;
+}
+
+// 2. Use interface segregation
+interface OrderReader {
+    findById(id: string): Promise<Order | null>;
+    findByUserId(userId: string): Promise<Order[]>;
+}
+
+interface OrderWriter {
+    save(order: Order): Promise<Order>;
+    delete(id: string): Promise<void>;
+}
+
+class OrderRepositoryImpl implements OrderReader, OrderWriter {
     // Implementation
 }
+```
 
-// Infrastructure Layer
-package infrastructure
+### 2. Factory Pattern Usage
 
-type OrderRepository struct {
-    db     *sql.DB
-    mapper OrderMapper
+```typescript
+// Abstract factory for creating use cases
+interface UseCaseFactory {
+    createOrderUseCase(): CreateOrderUseCase;
+    getOrderUseCase(): GetOrderUseCase;
 }
 
-func NewOrderRepository(
-    db *sql.DB, 
-    mapper OrderMapper) port.OrderRepository {
-    
-    return &OrderRepository{
-        db:     db,
-        mapper: mapper,
+class UseCaseFactoryImpl implements UseCaseFactory {
+    constructor(
+        private readonly orderRepository: OrderRepository,
+        private readonly paymentService: PaymentService
+    ) {}
+
+    createOrderUseCase(): CreateOrderUseCase {
+        return new CreateOrderUseCase(
+            this.orderRepository,
+            this.paymentService
+        );
     }
-}
 
-func (r *OrderRepository) Save(
-    order *domain.Order) error {
-    entity := r.mapper.ToEntity(order)
-    // Implementation
-}
-
-// Wire Configuration
-package main
-
-func setupApplication(cfg *Config) *application.OrderProcessor {
-    db := initDatabase(cfg.Database)
-    mapper := NewOrderMapper()
-    
-    orderRepo := infrastructure.NewOrderRepository(db, mapper)
-    paymentGateway := infrastructure.NewPaymentGateway(cfg.Payment)
-    eventPublisher := infrastructure.NewEventPublisher(cfg.Events)
-    
-    return application.NewOrderProcessor(
-        orderRepo,
-        paymentGateway,
-        eventPublisher,
-    )
-}
-```
-  </TabItem>
-</Tabs>
-
-## 🔄 Related Patterns
-
-1. **Dependency Injection Container**
-    - Manages object creation and lifecycle
-    - Resolves dependencies automatically
-    - Supports testing through substitution
-
-2. **Factory Pattern**
-    - Creates complex objects
-    - Hides implementation details
-    - Supports dependency resolution
-
-3. **Builder Pattern**
-    - Constructs complex objects step by step
-    - Manages optional dependencies
-    - Supports immutable objects
-
-## ✅ Best Practices
-
-### Configuration
-1. Use dependency injection
-2. Configure at composition root
-3. Externalize configuration
-4. Use constructor injection
-
-### Monitoring
-1. Track dependency health
-2. Monitor dependency lifecycles
-3. Log dependency resolution
-4. Implement circuit breakers
-
-### Testing
-1. Use mock dependencies
-2. Test boundary interfaces
-3. Verify dependency rules
-4. Use test containers
-
-## ⚠️ Common Pitfalls
-
-1. **Circular Dependencies**
-    - Symptom: Mutually dependent components
-    - Solution: Redesign component boundaries
-
-2. **Leaky Abstractions**
-    - Symptom: Implementation details in interfaces
-    - Solution: Design proper abstractions
-
-3. **God Objects**
-    - Symptom: Too many dependencies
-    - Solution: Split responsibilities
-
-4. **Hidden Dependencies**
-    - Symptom: Dependencies created internally
-    - Solution: Inject all dependencies
-
-## 🎯 Use Cases
-
-### 1. E-commerce Platform
-
-```mermaid
-graph TD
-    A[Order Service] --> B[Payment Service]
-    A --> C[Inventory Service]
-    A --> D[Notification Service]
-    subgraph "Dependencies"
-    B --> E[Payment Gateway]
-    C --> F[Stock Database]
-    D --> G[Message Queue]
-    end
-```
-
-### 2. Banking System
-- Account management
-- Transaction processing
-- Reporting services
-
-### 3. Healthcare Application
-- Patient records
-- Appointment scheduling
-- Billing integration
-
-## 🔍 Deep Dive Topics
-
-### Thread Safety
-
-1. **Thread-Safe Dependencies**
-```java
-@ThreadSafe
-public class ThreadSafeService {
-    private final ConcurrentMap<String, Dependency> dependencies;
-    
-    public Object process(String key) {
-        return dependencies.computeIfAbsent(key, 
-            this::createDependency);
+    getOrderUseCase(): GetOrderUseCase {
+        return new GetOrderUseCase(this.orderRepository);
     }
 }
 ```
 
-### Distributed Systems
+## Anti-Patterns <a name="anti-patterns"></a>
 
-1. **Remote Dependencies**
-```java
-public class RemoteServiceClient {
-    private final CircuitBreaker circuitBreaker;
-    private final RemoteService service;
-    
-    public Response execute(Request request) {
-        return circuitBreaker.execute(() -> 
-            service.process(request));
+### ❌ Common Mistakes
+
+1. **Direct Framework Dependencies**
+```typescript
+// Bad: Domain logic depending on framework
+class Order {
+    async save() {
+        const db = new MongoDB(); // Direct framework dependency
+        await db.collection('orders').insertOne(this);
     }
 }
 ```
 
-### Performance
+2. **Circular Dependencies**
+```typescript
+// Bad: Circular dependency between modules
+// order.service.ts
+import { UserService } from './user.service';
 
-1. **Lazy Loading**
-```java
-public class LazyDependencyLoader {
-    private volatile Dependency dependency;
-    
-    public Dependency get() {
-        if (dependency == null) {
-            synchronized (this) {
-                if (dependency == null) {
-                    dependency = createDependency();
-                }
-            }
+export class OrderService {
+    constructor(private userService: UserService) {}
+}
+
+// user.service.ts
+import { OrderService } from './order.service';
+
+export class UserService {
+    constructor(private orderService: OrderService) {}
+}
+```
+
+### ✅ Correct Implementations
+
+1. **Clean Dependencies**
+```typescript
+// Good: Using dependency injection
+class Order {
+    // Domain logic only
+    calculateTotal(): Money {
+        return this.items.reduce(
+            (total, item) => total.add(item.price),
+            Money.zero()
+        );
+    }
+}
+
+class OrderRepository {
+    constructor(private readonly database: Database) {}
+
+    async save(order: Order): Promise<void> {
+        await this.database.save('orders', order);
+    }
+}
+```
+
+2. **Breaking Circular Dependencies**
+```typescript
+// Good: Using events to break circular dependencies
+interface OrderCreatedEvent {
+    orderId: string;
+    userId: string;
+    total: Money;
+}
+
+class OrderService {
+    constructor(
+        private eventBus: EventBus,
+        private orderRepository: OrderRepository
+    ) {}
+
+    async createOrder(data: CreateOrderData): Promise<Order> {
+        const order = await this.orderRepository.save(data);
+        this.eventBus.publish('OrderCreated', {
+            orderId: order.id,
+            userId: order.userId,
+            total: order.total
+        });
+        return order;
+    }
+}
+
+class UserService {
+    constructor(private eventBus: EventBus) {
+        this.eventBus.subscribe('OrderCreated', this.handleOrderCreated);
+    }
+
+    private handleOrderCreated(event: OrderCreatedEvent): void {
+        // Handle order creation
+    }
+}
+```
+
+## Testing Strategies <a name="testing"></a>
+
+### Unit Testing with Dependencies
+
+```typescript
+describe('CreateOrderUseCase', () => {
+    let useCase: CreateOrderUseCase;
+    let orderRepository: jest.Mocked<OrderRepository>;
+    let paymentService: jest.Mocked<PaymentService>;
+
+    beforeEach(() => {
+        orderRepository = {
+            save: jest.fn(),
+            findById: jest.fn()
+        };
+
+        paymentService = {
+            processPayment: jest.fn()
+        };
+
+        useCase = new CreateOrderUseCase(
+            orderRepository,
+            paymentService
+        );
+    });
+
+    it('should create order successfully', async () => {
+        // Arrange
+        const request = createTestOrderRequest();
+        const expectedOrder = createTestOrder();
+        orderRepository.save.mockResolvedValue(expectedOrder);
+        paymentService.processPayment.mockResolvedValue({
+            success: true
+        });
+
+        // Act
+        const result = await useCase.execute(request);
+
+        // Assert
+        expect(result.orderId).toBe(expectedOrder.id);
+        expect(orderRepository.save).toHaveBeenCalledWith(
+            expect.objectContaining({
+                items: request.items
+            })
+        );
+    });
+});
+```
+
+## Real-world Use Cases <a name="real-world"></a>
+
+### E-commerce System Example
+
+```typescript
+// 1. Module definition
+@Module({
+    imports: [
+        DatabaseModule,
+        PaymentModule,
+        NotificationModule
+    ],
+    providers: [
+        {
+            provide: 'OrderRepository',
+            useClass: OrderRepositoryImpl
+        },
+        {
+            provide: 'PaymentService',
+            useClass: PaymentServiceImpl
+        },
+        {
+            provide: CreateOrderUseCase,
+            useFactory: (orderRepo, paymentService) => {
+                return new CreateOrderUseCase(orderRepo, paymentService);
+            },
+            inject: ['OrderRepository', 'PaymentService']
         }
-        return dependency;
+    ],
+    controllers: [OrderController]
+})
+export class OrderModule {}
+
+// 2. Use case implementation
+class CreateOrderUseCase {
+    constructor(
+        @Inject('OrderRepository')
+        private readonly orderRepository: OrderRepository,
+        @Inject('PaymentService')
+        private readonly paymentService: PaymentService,
+        @Inject('NotificationService')
+        private readonly notificationService: NotificationService
+    ) {}
+
+    async execute(request: CreateOrderRequest): Promise<CreateOrderResponse> {
+        // Create order
+        const order = await this.orderRepository.save(
+            new Order(request)
+        );
+
+        // Process payment
+        const payment = await this.paymentService.processPayment({
+            orderId: order.id,
+            amount: order.total
+        });
+
+        // Send notification
+        await this.notificationService.notify({
+            type: 'ORDER_CREATED',
+            orderId: order.id,
+            userId: order.userId
+        });
+
+        return {
+            orderId: order.id,
+            status: order.status,
+            paymentId: payment.id
+        };
     }
 }
 ```
 
-## 📚 Additional Resources
+## FAQ Section <a name="faq"></a>
 
-### Dependency Management Tools
-1. Spring Framework (Java)
-2. Wire (Go)
-3. Guice (Java)
-4. Fx (Go)
+1. **Q: How to handle cross-cutting concerns?**
+   A: Use decorators or middleware:
+   ```typescript
+   @Injectable()
+   class LoggingDecorator implements UseCase<Request, Response> {
+       constructor(
+           @Inject(forwardRef(() => UseCase))
+           private useCase: UseCase<Request, Response>,
+           private logger: Logger
+       ) {}
+
+       async execute(request: Request): Promise<Response> {
+           this.logger.info('Starting use case', { request });
+           const response = await this.useCase.execute(request);
+           this.logger.info('Completed use case', { response });
+           return response;
+       }
+   }
+   ```
+
+2. **Q: How to manage configuration dependencies?**
+   A: Use configuration providers:
+   ```typescript
+   @Injectable()
+   class ConfigurationProvider {
+       private config: Configuration;
+
+       constructor() {
+           this.config = this.loadConfiguration();
+       }
+
+       get<T>(key: string): T {
+           return this.config[key];
+       }
+
+       private loadConfiguration(): Configuration {
+           // Load from environment variables, files, etc.
+       }
+   }
+   ```
+
+## References <a name="references"></a>
 
 ### Books
-1. "Clean Architecture" by Robert C. Martin
-2. "Dependency Injection" by Dhanji R. Prasanna
-3. "Building Microservices" by Sam Newman
+- "Clean Architecture" by Robert C. Martin
+- "Dependency Injection Principles, Practices, and Patterns" by Steven van Deursen & Mark Seemann
+- "Building Microservices" by Sam Newman
 
-### References
-1. [Martin Fowler - Inversion of Control](https://martinfowler.com/articles/injection.html)
-2. [The Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
+### Articles
+- "Dependency Injection in Clean Architecture"
+- "Managing Dependencies in Large Scale Applications"
+- "Clean Architecture: Dependencies Management"
 
-## ❓ FAQs
-
-### Q: How to handle optional dependencies?
-A: Use null object pattern or optional injection.
-
-### Q: When to use service locator vs DI?
-A: Prefer DI as it makes dependencies explicit.
-
-### Q: How to manage transitive dependencies?
-A: Use dependency injection containers and proper modularization.
-
-### Q: Should I use field injection or constructor injection?
-A: Prefer constructor injection for explicit dependencies and immutability.
-
-### Q: How to handle dependency cycles?
-A: Redesign components to remove cycles through abstractions or new boundaries.
-
-
+### Online Resources
+- Clean Architecture GitHub Examples
+- Dependency Injection Patterns
+- Clean Code Principles
