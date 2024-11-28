@@ -1,7 +1,7 @@
 ---
 sidebar_position: 1
-title: "Interview Questions - 1"
-description: "Interview Questions - 1"
+title: "TSA Engineer Interview"
+description: "TSA Engineer Interview"
 ---
 
 # Technical System Analyst Interview Preparation Guide

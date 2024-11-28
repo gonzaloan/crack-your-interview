@@ -3,273 +3,500 @@ sidebar_position: 3
 title: "Anti Patterns"
 description: "Anti Patterns"
 ---
+# 🚫 Microservices Anti-Patterns and Solutions
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
+## 1. 🏗️ Architectural Anti-Patterns
 
-# 🚫 Anti-Patterns in Software Architecture
+### 1.1 Distributed Monolith
 
-## Overview
-Anti-patterns are common solutions to recurring problems that appear beneficial at first but ultimately lead to problematic situations. Think of them as "what not to do" patterns - like taking shortcuts while building a house that might save time initially but cause structural problems later.
+**What It Is**: Services that are deployed independently but are so tightly coupled that they must be deployed together.
 
-**Real-world Analogy**: Consider a city that keeps adding lanes to highways to solve traffic congestion. While it seems logical initially, this often leads to induced demand, making traffic worse and creating additional problems like increased pollution and urban sprawl.
+**Signs You Have This**:
+- Changes in one service require changes in other services
+- Services share databases
+- Synchronous communication chains
+- Tight deployment coupling
 
-## 🔑 Key Concepts
+**Example of the Problem**:
+```java
+// Anti-pattern example
+@Service
+public class OrderService {
+    @Autowired
+    private CustomerService customerService;  // Direct service dependency
+    @Autowired
+    private PaymentService paymentService;
+    @Autowired
+    private InventoryService inventoryService;
+    
+    public Order createOrder(OrderRequest request) {
+        // Synchronous calls creating a chain of dependencies
+        Customer customer = customerService.getCustomer(request.getCustomerId());
+        Payment payment = paymentService.processPayment(request.getPayment());
+        inventoryService.reserveItems(request.getItems());
+        
+        return orderRepository.save(new Order(customer, payment));
+    }
+}
+```
 
-### Components of Anti-Patterns
+**Solution**:
+```java
+@Service
+public class OrderService {
+    private final EventPublisher eventPublisher;
+    private final CustomerClient customerClient;
+    
+    public Order createOrder(OrderRequest request) {
+        // Verify customer exists with circuit breaker
+        CustomerDTO customer = customerClient.getCustomerBasicInfo(
+            request.getCustomerId());
+        
+        // Create order in pending state
+        Order order = orderRepository.save(
+            new Order(request, OrderStatus.PENDING));
+        
+        // Publish event for async processing
+        eventPublisher.publish(new OrderCreatedEvent(
+            order.getId(), 
+            request.getPayment(),
+            request.getItems()
+        ));
+        
+        return order;
+    }
+    
+    @EventListener
+    public void onPaymentProcessed(PaymentProcessedEvent event) {
+        Order order = orderRepository.findById(event.getOrderId())
+                                   .orElseThrow();
+        order.updatePaymentStatus(event.getStatus());
+        orderRepository.save(order);
+    }
+}
+```
 
-1. **Problem**: The recurring situation that tempts developers toward the anti-pattern
-2. **Anti-Pattern Solution**: The common but problematic approach
-3. **Refactored Solution**: The recommended way to solve the problem
-4. **Root Causes**: Understanding why the anti-pattern emerges
-5. **Consequences**: The negative impacts of implementing the anti-pattern
+### 1.2 Data Lake Anti-Pattern
 
-### Common Categories
+**What It Is**: Multiple services sharing the same database.
 
-- **Architectural Anti-Patterns**
-- **Development Anti-Patterns**
-- **Organizational Anti-Patterns**
-- **Environmental Anti-Patterns**
+**Signs You Have This**:
+- Multiple services accessing same tables
+- Cross-service transactions
+- Schema changes affect multiple services
 
-## 💻 Implementation Examples
+**Problem Example**:
+```java
+// Anti-pattern: Multiple services sharing database access
+@Repository
+public interface CustomerRepository extends JpaRepository<Customer, Long> {
+    // Used by both CustomerService and OrderService
+    @Query("SELECT c FROM Customer c WHERE c.id = ?1")
+    Customer findCustomerById(Long id);
+}
 
-Here are some common anti-patterns and their solutions:
+@Service
+public class OrderService {
+    @Autowired
+    private CustomerRepository customerRepository; // Direct database access
+    
+    public Order createOrder(OrderRequest request) {
+        Customer customer = customerRepository.findCustomerById(
+            request.getCustomerId());
+        // Process order using customer data
+    }
+}
+```
 
-### The God Object Anti-Pattern
+**Solution**:
+```java
+// Each service has its own database
+@Configuration
+public class OrderDatabaseConfig {
+    @Bean
+    @ConfigurationProperties(prefix = "order.datasource")
+    public DataSource orderDataSource() {
+        return DataSourceBuilder.create().build();
+    }
+}
 
-<Tabs>
-  <TabItem value="java" label="Java">
-    ```java
-    // Anti-Pattern Example
-    public class GodObject {
-        private Database db;
-        private UserInterface ui;
-        private BusinessLogic logic;
-        private EmailService email;
-
-        public void createUser(String name) {
-            // Handles UI validation
-            if (!ui.validateInput(name)) {
-                return;
-            }
+// Service uses API calls
+@Service
+public class OrderService {
+    private final CustomerClient customerClient;
+    
+    public Order createOrder(OrderRequest request) {
+        CustomerDTO customer = customerClient.getCustomer(
+            request.getCustomerId());
             
-            // Handles business logic
-            User user = logic.createUserObject(name);
-            
-            // Handles database operations
-            db.saveUser(user);
-            
-            // Handles email notifications
-            email.sendWelcomeEmail(user);
+        // Store only necessary customer data
+        OrderCustomer orderCustomer = new OrderCustomer(
+            customer.getId(),
+            customer.getName(),
+            customer.getShippingAddress()
+        );
+        
+        return orderRepository.save(new Order(orderCustomer));
+    }
+}
+```
+
+## 2. 🔄 Communication Anti-Patterns
+
+### 2.1 Chatty Communication
+
+**What It Is**: Services making excessive API calls to each other.
+
+**Problem Example**:
+```java
+// Anti-pattern: Multiple calls for related data
+@Service
+public class ProductCatalogService {
+    private final PriceService priceService;
+    private final InventoryService inventoryService;
+    private final ReviewService reviewService;
+    
+    public ProductDetails getProductDetails(String productId) {
+        Product product = repository.findById(productId);
+        Price price = priceService.getPrice(productId);  // API call 1
+        Integer stock = inventoryService.getStock(productId);  // API call 2
+        List<Review> reviews = reviewService.getReviews(productId);  // API call 3
+        
+        return new ProductDetails(product, price, stock, reviews);
+    }
+}
+```
+
+**Solution**:
+```java
+// Solution 1: API Composition
+@Service
+public class ProductCatalogService {
+    public ProductDetails getProductDetails(String productId) {
+        CompletableFuture<Price> priceFuture = 
+            CompletableFuture.supplyAsync(() -> 
+                priceService.getPrice(productId));
+                
+        CompletableFuture<Integer> stockFuture = 
+            CompletableFuture.supplyAsync(() -> 
+                inventoryService.getStock(productId));
+                
+        CompletableFuture<List<Review>> reviewsFuture = 
+            CompletableFuture.supplyAsync(() -> 
+                reviewService.getReviews(productId));
+        
+        return CompletableFuture.allOf(
+            priceFuture, stockFuture, reviewsFuture)
+            .thenApply(v -> new ProductDetails(
+                product,
+                priceFuture.join(),
+                stockFuture.join(),
+                reviewsFuture.join()))
+            .join();
+    }
+}
+
+// Solution 2: Event-Driven Approach
+@Service
+public class ProductEventHandler {
+    @EventListener
+    public void onProductUpdated(ProductUpdatedEvent event) {
+        ProductDetails details = cache.get(event.getProductId());
+        switch(event.getType()) {
+            case PRICE_UPDATED:
+                details.updatePrice(event.getNewPrice());
+                break;
+            case STOCK_CHANGED:
+                details.updateStock(event.getNewStock());
+                break;
+            case REVIEW_ADDED:
+                details.addReview(event.getNewReview());
+                break;
+        }
+        cache.put(event.getProductId(), details);
+    }
+}
+```
+
+### 2.2 Synchronous Chain Calls
+
+**What It Is**: Long chain of synchronous service calls.
+
+**Problem Example**:
+```java
+// Anti-pattern: Chain of synchronous calls
+@Service
+public class OrderProcessor {
+    public OrderResult processOrder(OrderRequest request) {
+        // Synchronous chain
+        Customer customer = customerService.validate(request.getCustomerId());
+        Payment payment = paymentService.process(request.getPayment());
+        Inventory inventory = inventoryService.reserve(request.getItems());
+        Shipment shipment = shippingService.schedule(
+            customer.getAddress(), inventory.getItems());
+        
+        return new OrderResult(customer, payment, inventory, shipment);
+    }
+}
+```
+
+**Solution**:
+```java
+// Choreography-based solution
+@Service
+public class OrderProcessor {
+    public OrderResult processOrder(OrderRequest request) {
+        // Validate customer synchronously (essential)
+        customerService.validateCustomer(request.getCustomerId());
+        
+        // Create order in pending state
+        Order order = orderRepository.save(
+            new Order(request, OrderStatus.PENDING));
+        
+        // Publish event for async processing
+        eventPublisher.publish(new OrderCreatedEvent(order));
+        
+        return new OrderResult(order.getId(), OrderStatus.PENDING);
+    }
+    
+    @EventListener
+    public void onPaymentProcessed(PaymentProcessedEvent event) {
+        Order order = orderRepository.findById(event.getOrderId())
+                                   .orElseThrow();
+        
+        if (event.isSuccessful()) {
+            order.setStatus(OrderStatus.PAYMENT_COMPLETED);
+            eventPublisher.publish(new OrderPaidEvent(order));
+        } else {
+            order.setStatus(OrderStatus.PAYMENT_FAILED);
+            eventPublisher.publish(new OrderFailedEvent(order));
         }
         
-        public void processOrder(Order order) {
-            // Similar violation of SRP...
+        orderRepository.save(order);
+    }
+}
+```
+
+## 3. 🧱 Design Anti-Patterns
+
+### 3.1 Wrong Service Boundaries
+
+**What It Is**: Services that don't align with business domains.
+
+**Problem Example**:
+```java
+// Anti-pattern: Technical rather than business boundaries
+@Service
+public class DatabaseService {
+    public void saveCustomer(Customer customer) { ... }
+    public void saveOrder(Order order) { ... }
+    public void savePayment(Payment payment) { ... }
+}
+
+@Service
+public class ValidationService {
+    public void validateCustomer(Customer customer) { ... }
+    public void validateOrder(Order order) { ... }
+    public void validatePayment(Payment payment) { ... }
+}
+```
+
+**Solution**:
+```java
+// Domain-driven service boundaries
+@Service
+public class CustomerService {
+    public Customer createCustomer(CustomerRequest request) {
+        validateCustomerData(request);
+        Customer customer = new Customer(request);
+        customerRepository.save(customer);
+        eventPublisher.publish(new CustomerCreatedEvent(customer));
+        return customer;
+    }
+}
+
+@Service
+public class OrderService {
+    public Order createOrder(OrderRequest request) {
+        validateOrderData(request);
+        Order order = new Order(request);
+        orderRepository.save(order);
+        eventPublisher.publish(new OrderCreatedEvent(order));
+        return order;
+    }
+}
+```
+
+### 3.2 No API Versioning
+
+**What It Is**: Lack of API versioning strategy leading to breaking changes.
+
+**Problem Example**:
+```java
+// Anti-pattern: No versioning
+@RestController
+@RequestMapping("/api/orders")
+public class OrderController {
+    @PostMapping
+    public Order createOrder(OrderRequest request) {
+        // Breaking changes affect all clients
+        return orderService.createOrder(request);
+    }
+}
+```
+
+**Solution**:
+```java
+@RestController
+public class OrderController {
+    @PostMapping("/api/v1/orders")
+    public OrderV1Response createOrderV1(OrderV1Request request) {
+        return orderService.createOrderV1(request);
+    }
+    
+    @PostMapping("/api/v2/orders")
+    public OrderV2Response createOrderV2(OrderV2Request request) {
+        return orderService.createOrderV2(request);
+    }
+}
+
+// API Version mapping
+@Configuration
+public class ApiVersionConfig {
+    @Bean
+    public RouteLocator routeLocator(RouteLocatorBuilder builder) {
+        return builder.routes()
+            .route("orders-v1", r -> r
+                .path("/api/v1/orders/**")
+                .uri("lb://order-service-v1"))
+            .route("orders-v2", r -> r
+                .path("/api/v2/orders/**")
+                .uri("lb://order-service-v2"))
+            .build();
+    }
+}
+```
+
+## 4. 📈 Scalability Anti-Patterns
+
+### 4.1 No Caching Strategy
+
+**What It Is**: Missing or improper caching leading to unnecessary service calls.
+
+**Solution**:
+```java
+@Service
+public class ProductCatalogService {
+    private final CacheManager cacheManager;
+    
+    public ProductDetails getProductDetails(String productId) {
+        return cacheManager.getCache("products")
+            .get(productId, () -> {
+                // Fetch from service only if not in cache
+                return fetchProductDetails(productId);
+            });
+    }
+    
+    @CacheEvict(value = "products", key = "#productId")
+    public void updateProduct(String productId, ProductUpdate update) {
+        // Update product and invalidate cache
+        productRepository.update(productId, update);
+    }
+}
+```
+
+### 4.2 No Circuit Breaker
+
+**What It Is**: Missing fault tolerance in service communications.
+
+**Solution**:
+```java
+@Service
+public class OrderService {
+    @CircuitBreaker(name = "paymentService",
+                    fallbackMethod = "paymentFallback")
+    @RateLimiter(name = "paymentService")
+    @Bulkhead(name = "paymentService")
+    public PaymentResponse processPayment(OrderPayment payment) {
+        return paymentClient.processPayment(payment);
+    }
+    
+    private PaymentResponse paymentFallback(OrderPayment payment,
+                                          Exception e) {
+        // Fallback logic
+        return PaymentResponse.builder()
+            .orderId(payment.getOrderId())
+            .status(PaymentStatus.PENDING)
+            .message("Payment processing delayed")
+            .build();
+    }
+}
+```
+
+## 5. 🔍 Monitoring Anti-Patterns
+
+### 5.1 Insufficient Monitoring
+
+**Solution**:
+```java
+@Aspect
+@Component
+public class ServiceMonitoringAspect {
+    private final MeterRegistry registry;
+    
+    @Around("@annotation(Monitor)")
+    public Object monitorOperation(ProceedingJoinPoint joinPoint) 
+            throws Throwable {
+        Timer.Sample sample = Timer.start(registry);
+        
+        try {
+            Object result = joinPoint.proceed();
+            sample.stop(Timer.builder("service.operation")
+                .tag("method", joinPoint.getSignature().getName())
+                .tag("status", "success")
+                .register(registry));
+            return result;
+        } catch (Exception e) {
+            sample.stop(Timer.builder("service.operation")
+                .tag("method", joinPoint.getSignature().getName())
+                .tag("status", "error")
+                .tag("error.type", e.getClass().getSimpleName())
+                .register(registry));
+            throw e;
         }
     }
-    ```
-  </TabItem>
-  <TabItem value="go" label="Go">
-    ```go
-    // Anti-Pattern Example
-    type GodObject struct {
-        db    Database
-        ui    UserInterface
-        logic BusinessLogic
-        email EmailService
-    }
+}
+```
 
-    func (g *GodObject) CreateUser(name string) error {
-        // Handles UI validation
-        if !g.ui.ValidateInput(name) {
-            return errors.New("invalid input")
-        }
-        
-        // Handles business logic
-        user := g.logic.CreateUserObject(name)
-        
-        // Handles database operations
-        if err := g.db.SaveUser(user); err != nil {
-            return err
-        }
-        
-        // Handles email notifications
-        return g.email.SendWelcomeEmail(user)
-    }
-    ```
-  </TabItem>
-</Tabs>
+## 6. 📝 Best Practices to Avoid Anti-Patterns
 
-### Refactored Solution
+1. **Design Principles**
+    - Follow Domain-Driven Design
+    - Use Bounded Contexts
+    - Implement proper service boundaries
+    - Design for failure
 
-<Tabs>
-  <TabItem value="java" label="Java">
-    ```java
-    // Refactored Solution
-    public class UserService {
-        private final UserValidator validator;
-        private final UserRepository repository;
-        private final NotificationService notificationService;
+2. **Communication Guidelines**
+    - Prefer asynchronous communication
+    - Use event-driven architecture
+    - Implement proper error handling
+    - Use circuit breakers
 
-        public UserService(UserValidator validator, 
-                         UserRepository repository,
-                         NotificationService notificationService) {
-            this.validator = validator;
-            this.repository = repository;
-            this.notificationService = notificationService;
-        }
-        
-        public User createUser(UserCreationRequest request) {
-            validator.validate(request);
-            User user = repository.save(new User(request));
-            notificationService.notifyUserCreated(user);
-            return user;
-        }
-    }
-    ```
-  </TabItem>
-  <TabItem value="go" label="Go">
-    ```go
-    // Refactored Solution
-    type UserService struct {
-        validator     UserValidator
-        repository   UserRepository
-        notifications NotificationService
-    }
+3. **Data Management**
+    - Maintain data independence
+    - Use event sourcing when appropriate
+    - Implement proper caching strategies
+    - Handle data consistency
 
-    func NewUserService(v UserValidator, r UserRepository, n NotificationService) *UserService {
-        return &UserService{
-            validator:     v,
-            repository:   r,
-            notifications: n,
-        }
-    }
+4. **Monitoring and Observability**
+    - Implement comprehensive logging
+    - Use distributed tracing
+    - Monitor service health
+    - Track business metrics
 
-    func (s *UserService) CreateUser(request UserCreationRequest) (*User, error) {
-        if err := s.validator.Validate(request); err != nil {
-            return nil, err
-        }
-        
-        user, err := s.repository.Save(NewUser(request))
-        if err != nil {
-            return nil, err
-        }
-        
-        if err := s.notifications.NotifyUserCreated(user); err != nil {
-            return user, err
-        }
-        
-        return user, nil
-    }
-    ```
-  </TabItem>
-</Tabs>
+## 7. 📚 References
 
-## 🔄 Related Patterns
-
-1. **Clean Architecture**: Helps avoid anti-patterns by enforcing clear boundaries
-2. **SOLID Principles**: Guidelines to prevent common anti-patterns
-3. **Design Patterns**: Proven solutions that help avoid anti-patterns
-
-## ⚙️ Best Practices
-
-### Configuration
-- Use configuration management tools
-- Externalize configuration
-- Version control configurations
-- Use environment-specific configurations
-
-### Monitoring
-- Implement comprehensive logging
-- Use APM tools
-- Set up alerts for anti-pattern indicators
-- Monitor system boundaries
-
-### Testing
-- Write tests before refactoring
-- Use integration tests to verify boundaries
-- Implement performance tests
-- Maintain high test coverage
-
-## ❌ Common Pitfalls
-
-1. **Premature Optimization**
-    - Symptom: Optimizing code before measuring
-    - Solution: Profile first, optimize second
-
-2. **Magic Numbers/Strings**
-    - Symptom: Hardcoded values throughout codebase
-    - Solution: Use constants and configuration
-
-3. **Copy-Paste Programming**
-    - Symptom: Duplicated code blocks
-    - Solution: Extract common functionality
-
-## 🎯 Use Cases
-
-### 1. E-commerce Platform Refactoring
-
-Problem: Monolithic application with tightly coupled components
-Solution: Microservices architecture with clear boundaries
-
-### 2. Legacy System Modernization
-
-Problem: Big ball of mud architecture
-Solution: Strangler fig pattern implementation
-
-### 3. Payment Processing System
-
-Problem: Lack of separation between business rules and implementation
-Solution: Implementation of clean architecture
-
-## 🔍 Deep Dive Topics
-
-### Thread Safety
-
-- Race conditions identification
-- Synchronization mechanisms
-- Immutable objects
-- Thread-safe collections
-
-### Distributed Systems
-
-- CAP theorem implications
-- Eventual consistency
-- Distributed transactions
-- Network fallacies
-
-### Performance
-
-- Caching strategies
-- Connection pooling
-- Resource management
-- Load balancing
-
-## 📚 Additional Resources
-
-### Tools
-- SonarQube for code quality
-- JProfiler for performance analysis
-- Architecture Decision Records (ADR) tools
-
-### References
-- "Clean Architecture" by Robert C. Martin
-- "Patterns of Enterprise Application Architecture" by Martin Fowler
-- "Release It!" by Michael T. Nygard
-
-## ❓ FAQ
-
-1. **Q: How do I identify anti-patterns in existing code?**
-   A: Look for signs like high coupling, low cohesion, and repeated code patterns.
-
-2. **Q: What's the cost of not addressing anti-patterns?**
-   A: Technical debt, maintenance issues, and decreased development velocity.
-
-3. **Q: How do I convince management to allocate time for refactoring?**
-   A: Document technical debt costs and demonstrate impact on business metrics.
-
-4. **Q: What's the best approach to refactoring large systems?**
-   A: Incremental changes, good test coverage, and careful planning.
-
-5. **Q: How do I prevent anti-patterns in new projects?**
-   A: Strong architecture guidelines, code reviews, and continuous refactoring.
+- "Microservices Anti-patterns and Pitfalls" by Mark Richards
+- "Building Microservices" by Sam Newman
+- "Release It!" by Michael Nygard
+- "Designing Distributed Systems" by Brendan Burns

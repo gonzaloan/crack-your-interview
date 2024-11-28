@@ -41,40 +41,6 @@ tech_expertise/
 │           ├── acid-guarantees.md             # Garantías ACID en distributed SQL
 │           └── consensus-protocols.md          # Protocolos de consenso
 
-├── architecture/
-│   ├── _category_.json
-│   ├── microservices-distributed/
-│   │   ├── microservices-fundamentals.md     # Fundamentos de microservicios
-│   │   ├── service-boundaries.md             # Definición de límites
-│   │   ├── data-management.md                # Gestión de datos distribuidos
-│   │   ├── service-discovery.md              # Descubrimiento de servicios
-│   │   └── resilience-patterns.md            # Patrones de resiliencia
-│   ├── cloud-patterns/
-│   │   ├── cloud-native.md                   # Arquitecturas cloud-native
-│   │   ├── scalability.md                    # Patrones de escalabilidad
-│   │   ├── reliability.md                    # Patrones de confiabilidad
-│   │   └── security.md                       # Patrones de seguridad
-│   └── components-communication/
-│       ├── sync-patterns.md                  # Patrones síncronos
-│       ├── async-patterns.md                 # Patrones asíncronos
-│       └── integration-patterns.md           # Patrones de integración
-
-├── design/
-│   ├── _category_.json
-│   ├── principles/
-│   │   ├── solid.md                         # Principios SOLID detallados
-│   │   ├── grasp.md                         # Principios GRASP
-│   │   └── design-principles.md             # Otros principios de diseño
-│   ├── patterns/
-│   │   ├── creational.md                    # Patrones creacionales
-│   │   ├── structural.md                    # Patrones estructurales
-│   │   ├── behavioral.md                    # Patrones de comportamiento
-│   │   └── enterprise.md                    # Patrones empresariales
-│   └── ddd/
-│       ├── strategic-design.md              # Diseño estratégico
-│       ├── tactical-design.md               # Diseño táctico
-│       └── implementation.md                # Implementación práctica
-
 ├── devops-security/
 │   ├── _category_.json
 │   ├── ci-cd/

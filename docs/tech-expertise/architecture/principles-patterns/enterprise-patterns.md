@@ -3,401 +3,472 @@ sidebar_position: 2
 title: "Enterprise Patterns"
 description: "Enterprise Patterns"
 ---
+# 🏢 Microservices Enterprise Patterns
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
+## 1. 🎯 Service Decomposition Patterns
 
-# 🏢 Enterprise Architecture Patterns
+### 1.1 Strangler Fig Pattern
 
-## Overview
-Enterprise patterns are proven solutions to common challenges in large-scale business applications. They provide structured approaches to handling complex business logic, data management, and system integration.
+**Concept**: Gradually migrate a monolithic application to microservices by intercepting and redirecting requests.
 
-**Real-world Analogy**: Think of enterprise patterns like the blueprints for a large corporate building. Just as a skyscraper needs carefully planned systems for electricity, plumbing, elevators, and security, enterprise applications need well-designed patterns for handling data, business rules, integration, and security.
+**When to Use**:
+- Legacy system modernization
+- Risk-averse transitions
+- Phased migrations
 
-## 🔑 Key Concepts
+**Implementation Strategy**:
+```java
+@Configuration
+public class StranglerConfig {
+    @Bean
+    public RouteLocator stranglerRoutes(RouteLocatorBuilder builder) {
+        return builder.routes()
+            // New microservice handling orders
+            .route("new-orders", r -> r
+                .path("/api/v2/orders/**")
+                .uri("lb://order-service"))
+            // Legacy system fallback
+            .route("legacy-orders", r -> r
+                .path("/api/orders/**")
+                .uri("http://legacy-system/orders"))
+            .build();
+    }
+}
+```
 
-### Core Enterprise Patterns
+### 1.2 Domain-Driven Decomposition
 
-1. **Domain Layer Patterns**
-    - Domain Model
-    - Service Layer
-    - Repository
+**Concept**: Break down services based on business domain boundaries.
 
-2. **Data Source Patterns**
-    - Data Mapper
-    - Unit of Work
-    - Identity Map
+**Key Principles**:
+- Bounded Contexts
+- Ubiquitous Language
+- Context Mapping
 
-3. **Object-Relational Patterns**
-    - Active Record
-    - Table Data Gateway
-    - Row Data Gateway
-
-4. **Integration Patterns**
-    - Gateway
-    - Service Locator
-    - Dependency Injection
-
-## 💻 Implementation Examples
-
-### Domain Model Pattern Example
-
-<Tabs>
-  <TabItem value="java" label="Java">
-    ```java
-    // Domain Entity
-    @Entity
+**Example**:
+```java
+// Order Bounded Context
+@DomainService
+public class OrderService {
+    @Aggregate
     public class Order {
-        @Id
-        private Long id;
-        private String status;
-        private List<OrderLine> orderLines;
+        private OrderId id;
+        private CustomerId customerId;
+        private Money totalAmount;
+        private OrderStatus status;
 
-        public BigDecimal calculateTotal() {
-            return orderLines.stream()
-                .map(OrderLine::getTotal)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        }
-        
-        public void addProduct(Product product, int quantity) {
-            OrderLine line = new OrderLine(product, quantity);
-            orderLines.add(line);
-        }
-        
-        public void submit() {
+        public void process() {
             validateOrder();
-            this.status = "SUBMITTED";
+            calculateTotal();
+            updateStatus(OrderStatus.PROCESSING);
+            publishEvent(new OrderProcessedEvent(this));
         }
+    }
+}
+
+// Shipping Bounded Context
+@DomainService
+public class ShippingService {
+    @Aggregate
+    public class Shipment {
+        private ShipmentId id;
+        private OrderId orderId;
+        private Address destination;
+        private ShipmentStatus status;
+
+        public void dispatch() {
+            validateAddress();
+            assignCarrier();
+            updateStatus(ShipmentStatus.DISPATCHED);
+            publishEvent(new ShipmentDispatchedEvent(this));
+        }
+    }
+}
+```
+
+## 2. 🔄 Integration Patterns
+
+### 2.1 Saga Pattern
+
+**Concept**: Manage distributed transactions across multiple services.
+
+**Types**:
+1. Choreography-based Saga
+2. Orchestration-based Saga
+
+**Choreography Example**:
+```java
+@Service
+public class OrderSaga {
+    @Transactional
+    public void createOrder(OrderCreateCommand cmd) {
+        // Local transaction
+        Order order = orderRepository.save(new Order(cmd));
         
-        private void validateOrder() {
-            if (orderLines.isEmpty()) {
-                throw new BusinessException("Order must have at least one item");
-            }
-        }
+        // Publish event for payment service
+        eventPublisher.publish(new OrderCreatedEvent(order));
     }
 
-    // Repository Pattern
-    public interface OrderRepository {
-        Order findById(Long id);
-        void save(Order order);
-        List<Order> findByStatus(String status);
-    }
-
-    // Service Layer
-    @Service
-    public class OrderService {
-        private final OrderRepository orderRepository;
-        private final ProductRepository productRepository;
+    @EventHandler
+    public void onPaymentCompleted(PaymentCompletedEvent event) {
+        Order order = orderRepository.findById(event.getOrderId());
+        order.markAsPaid();
         
-        @Transactional
-        public Order createOrder(OrderDTO orderDTO) {
-            Order order = new Order();
-            for (OrderLineDTO line : orderDTO.getLines()) {
-                Product product = productRepository.findById(line.getProductId());
-                order.addProduct(product, line.getQuantity());
-            }
-            return orderRepository.save(order);
-        }
-    }
-    ```
-  </TabItem>
-  <TabItem value="go" label="Go">
-    ```go
-    // Domain Entity
-    type Order struct {
-        ID         int64
-        Status     string
-        OrderLines []OrderLine
+        // Publish event for inventory service
+        eventPublisher.publish(new OrderPaidEvent(order));
     }
 
-    func (o *Order) CalculateTotal() decimal.Decimal {
-        total := decimal.NewFromInt(0)
-        for _, line := range o.OrderLines {
-            total = total.Add(line.GetTotal())
-        }
-        return total
-    }
-
-    func (o *Order) AddProduct(product Product, quantity int) error {
-        line := NewOrderLine(product, quantity)
-        o.OrderLines = append(o.OrderLines, line)
-        return nil
-    }
-
-    func (o *Order) Submit() error {
-        if err := o.validateOrder(); err != nil {
-            return err
-        }
-        o.Status = "SUBMITTED"
-        return nil
-    }
-
-    func (o *Order) validateOrder() error {
-        if len(o.OrderLines) == 0 {
-            return errors.New("order must have at least one item")
-        }
-        return nil
-    }
-
-    // Repository Pattern
-    type OrderRepository interface {
-        FindByID(id int64) (*Order, error)
-        Save(order *Order) error
-        FindByStatus(status string) ([]*Order, error)
-    }
-
-    // Service Layer
-    type OrderService struct {
-        orderRepo   OrderRepository
-        productRepo ProductRepository
-    }
-
-    func (s *OrderService) CreateOrder(dto OrderDTO) (*Order, error) {
-        order := &Order{}
+    @EventHandler
+    public void onInventoryReserved(InventoryReservedEvent event) {
+        Order order = orderRepository.findById(event.getOrderId());
+        order.markAsReady();
         
-        for _, lineDTO := range dto.Lines {
-            product, err := s.productRepo.FindByID(lineDTO.ProductID)
-            if err != nil {
-                return nil, err
+        // Publish event for shipping service
+        eventPublisher.publish(new OrderReadyForShipmentEvent(order));
+    }
+}
+```
+
+**Orchestration Example**:
+```java
+@Service
+public class OrderOrchestrator {
+    private final OrderService orderService;
+    private final PaymentService paymentService;
+    private final InventoryService inventoryService;
+    private final ShippingService shippingService;
+
+    @Transactional
+    public OrderResult processOrder(OrderCommand cmd) {
+        try {
+            // Create order
+            Order order = orderService.createOrder(cmd);
+            
+            // Process payment
+            PaymentResult payment = paymentService.processPayment(
+                new PaymentCommand(order));
+            
+            if (!payment.isSuccessful()) {
+                return compensateOrder(order);
             }
             
-            if err := order.AddProduct(*product, lineDTO.Quantity); err != nil {
-                return nil, err
+            // Reserve inventory
+            InventoryResult inventory = inventoryService.reserve(
+                new InventoryCommand(order));
+                
+            if (!inventory.isSuccessful()) {
+                paymentService.refund(payment);
+                return compensateOrder(order);
             }
-        }
-        
-        return order, s.orderRepo.Save(order)
-    }
-    ```
-  </TabItem>
-</Tabs>
-
-### Unit of Work Pattern Example
-
-<Tabs>
-  <TabItem value="java" label="Java">
-    ```java
-    public class UnitOfWork {
-        private final EntityManager em;
-        private final Map<String, Object> newObjects = new HashMap<>();
-        private final Map<String, Object> dirtyObjects = new HashMap<>();
-        private final Set<Object> deletedObjects = new HashSet<>();
-
-        public void registerNew(String key, Object obj) {
-            newObjects.put(key, obj);
-        }
-        
-        public void registerDirty(String key, Object obj) {
-            dirtyObjects.put(key, obj);
-        }
-        
-        public void registerDeleted(Object obj) {
-            deletedObjects.add(obj);
-        }
-        
-        @Transactional
-        public void commit() {
-            newObjects.values().forEach(em::persist);
-            dirtyObjects.values().forEach(em::merge);
-            deletedObjects.forEach(em::remove);
             
-            em.flush();
-            clear();
+            // Create shipment
+            ShipmentResult shipment = shippingService.createShipment(
+                new ShipmentCommand(order));
+                
+            return new OrderResult(order, payment, inventory, shipment);
+            
+        } catch (Exception e) {
+            return handleError(e);
+        }
+    }
+}
+```
+
+### 2.2 API Composition Pattern
+
+**Concept**: Aggregate data from multiple services to fulfill a client request.
+
+**Implementation**:
+```java
+@Service
+public class OrderDetailsCompositionService {
+    private final OrderService orderService;
+    private final CustomerService customerService;
+    private final PaymentService paymentService;
+    private final ShippingService shippingService;
+
+    public OrderDetailsDTO getOrderDetails(String orderId) {
+        CompletableFuture<Order> orderFuture = 
+            CompletableFuture.supplyAsync(() -> 
+                orderService.getOrder(orderId));
+
+        CompletableFuture<CustomerInfo> customerFuture = 
+            orderFuture.thenCompose(order ->
+                CompletableFuture.supplyAsync(() ->
+                    customerService.getCustomer(order.getCustomerId())));
+
+        CompletableFuture<PaymentInfo> paymentFuture = 
+            CompletableFuture.supplyAsync(() ->
+                paymentService.getPaymentInfo(orderId));
+
+        CompletableFuture<ShipmentInfo> shipmentFuture = 
+            CompletableFuture.supplyAsync(() ->
+                shippingService.getShipmentInfo(orderId));
+
+        return CompletableFuture.allOf(
+            orderFuture, customerFuture, paymentFuture, shipmentFuture)
+            .thenApply(v -> new OrderDetailsDTO(
+                orderFuture.join(),
+                customerFuture.join(),
+                paymentFuture.join(),
+                shipmentFuture.join()))
+            .join();
+    }
+}
+```
+
+## 3. 🛡️ Reliability Patterns
+
+### 3.1 Bulkhead Pattern
+
+**Concept**: Isolate service dependencies to prevent cascading failures.
+
+**Implementation**:
+```java
+@Configuration
+public class BulkheadConfig {
+    @Bean
+    public ThreadPoolBulkhead orderServiceBulkhead() {
+        ThreadPoolBulkheadConfig config = ThreadPoolBulkheadConfig.custom()
+            .maxThreadPoolSize(10)
+            .coreThreadPoolSize(5)
+            .queueCapacity(100)
+            .build();
+            
+        return ThreadPoolBulkhead.of("orderService", config);
+    }
+
+    @Bean
+    public ThreadPoolBulkhead paymentServiceBulkhead() {
+        ThreadPoolBulkheadConfig config = ThreadPoolBulkheadConfig.custom()
+            .maxThreadPoolSize(5)
+            .coreThreadPoolSize(3)
+            .queueCapacity(50)
+            .build();
+            
+        return ThreadPoolBulkhead.of("paymentService", config);
+    }
+}
+
+@Service
+public class OrderService {
+    @Bulkhead(name = "orderService", type = Bulkhead.Type.THREADPOOL)
+    public CompletableFuture<Order> processOrder(OrderRequest request) {
+        return CompletableFuture.supplyAsync(() -> {
+            // Process order
+            return orderProcessor.process(request);
+        });
+    }
+}
+```
+
+### 3.2 Rate Limiter Pattern
+
+**Concept**: Control the rate of requests to protect services from overload.
+
+**Implementation**:
+```java
+@Configuration
+public class RateLimitConfig {
+    @Bean
+    public RateLimiter orderRateLimiter() {
+        RateLimiterConfig config = RateLimiterConfig.custom()
+            .limitForPeriod(100)
+            .limitRefreshPeriod(Duration.ofSeconds(1))
+            .timeoutDuration(Duration.ofMillis(500))
+            .build();
+            
+        return RateLimiter.of("orderService", config);
+    }
+}
+
+@RestController
+public class OrderController {
+    @RateLimiter(name = "orderService")
+    @PostMapping("/orders")
+    public ResponseEntity<Order> createOrder(
+            @RequestBody OrderRequest request) {
+        return ResponseEntity.ok(orderService.createOrder(request));
+    }
+}
+```
+
+## 4. 📡 Communication Patterns
+
+### 4.1 Event Sourcing Pattern
+
+**Concept**: Store state changes as a sequence of events.
+
+**Implementation**:
+```java
+@Aggregate
+public class OrderAggregate {
+    private OrderState state;
+    private List<OrderEvent> changes = new ArrayList<>();
+
+    public void process(CreateOrderCommand cmd) {
+        // Business logic validation
+        validateOrder(cmd);
+        
+        // Apply event
+        OrderCreatedEvent event = new OrderCreatedEvent(
+            cmd.getOrderId(),
+            cmd.getCustomerId(),
+            cmd.getItems()
+        );
+        
+        apply(event);
+        changes.add(event);
+    }
+
+    public void markAsPaid(ProcessPaymentCommand cmd) {
+        validatePayment(cmd);
+        
+        OrderPaidEvent event = new OrderPaidEvent(
+            cmd.getOrderId(),
+            cmd.getPaymentId(),
+            cmd.getAmount()
+        );
+        
+        apply(event);
+        changes.add(event);
+    }
+
+    private void apply(OrderCreatedEvent event) {
+        this.state = new OrderState(event.getOrderId());
+        this.state.setStatus(OrderStatus.CREATED);
+    }
+
+    private void apply(OrderPaidEvent event) {
+        this.state.setStatus(OrderStatus.PAID);
+        this.state.setPaymentId(event.getPaymentId());
+    }
+
+    public List<OrderEvent> getUncommittedChanges() {
+        return new ArrayList<>(changes);
+    }
+
+    public void markChangesAsCommitted() {
+        changes.clear();
+    }
+}
+```
+
+### 4.2 CQRS Pattern
+
+**Concept**: Separate read and write operations for better scalability.
+
+**Implementation**:
+```java
+// Write Model
+@Service
+public class OrderCommandService {
+    private final EventStore eventStore;
+    
+    @Transactional
+    public void createOrder(CreateOrderCommand cmd) {
+        OrderAggregate aggregate = new OrderAggregate();
+        aggregate.process(cmd);
+        
+        eventStore.saveEvents(cmd.getOrderId(), 
+                            aggregate.getUncommittedChanges());
+    }
+}
+
+// Read Model
+@Service
+public class OrderQueryService {
+    private final OrderReadRepository repository;
+    
+    public OrderDTO getOrder(String orderId) {
+        return repository.findById(orderId)
+                        .map(this::toDTO)
+                        .orElseThrow(() -> 
+                            new OrderNotFoundException(orderId));
+    }
+    
+    @EventHandler
+    public void on(OrderCreatedEvent event) {
+        OrderReadModel order = new OrderReadModel();
+        order.setId(event.getOrderId());
+        order.setStatus(OrderStatus.CREATED);
+        repository.save(order);
+    }
+    
+    @EventHandler
+    public void on(OrderPaidEvent event) {
+        OrderReadModel order = repository.findById(event.getOrderId())
+                                       .orElseThrow();
+        order.setStatus(OrderStatus.PAID);
+        order.setPaymentId(event.getPaymentId());
+        repository.save(order);
+    }
+}
+```
+
+## 5. 📊 Monitoring and Observability
+
+### 5.1 Log Aggregation Pattern
+
+**Implementation**:
+```java
+@Aspect
+@Component
+public class LoggingAspect {
+    private static final String CORRELATION_ID = "correlationId";
+    
+    @Around("@annotation(LogOperation)")
+    public Object logOperation(ProceedingJoinPoint joinPoint) 
+            throws Throwable {
+        String correlationId = MDC.get(CORRELATION_ID);
+        if (correlationId == null) {
+            correlationId = generateCorrelationId();
+            MDC.put(CORRELATION_ID, correlationId);
         }
         
-        private void clear() {
-            newObjects.clear();
-            dirtyObjects.clear();
-            deletedObjects.clear();
+        try {
+            log.info("Starting operation: {}", 
+                    joinPoint.getSignature().getName());
+            Object result = joinPoint.proceed();
+            log.info("Completed operation: {}", 
+                    joinPoint.getSignature().getName());
+            return result;
+        } catch (Exception e) {
+            log.error("Operation failed: {}", 
+                    joinPoint.getSignature().getName(), e);
+            throw e;
+        } finally {
+            MDC.remove(CORRELATION_ID);
         }
     }
-    ```
-  </TabItem>
-  <TabItem value="go" label="Go">
-    ```go
-    type UnitOfWork struct {
-        db            *gorm.DB
-        newObjects    map[string]interface{}
-        dirtyObjects  map[string]interface{}
-        deletedObjects []interface{}
-    }
+}
+```
 
-    func NewUnitOfWork(db *gorm.DB) *UnitOfWork {
-        return &UnitOfWork{
-            db:             db,
-            newObjects:     make(map[string]interface{}),
-            dirtyObjects:   make(map[string]interface{}),
-            deletedObjects: make([]interface{}, 0),
-        }
-    }
+## 6. 🔍 Best Practices
 
-    func (uow *UnitOfWork) RegisterNew(key string, obj interface{}) {
-        uow.newObjects[key] = obj
-    }
+1. **Service Independence**
+    - Avoid shared databases
+    - Use asynchronous communication
+    - Implement proper service boundaries
 
-    func (uow *UnitOfWork) RegisterDirty(key string, obj interface{}) {
-        uow.dirtyObjects[key] = obj
-    }
+2. **Data Consistency**
+    - Use eventual consistency where possible
+    - Implement compensation logic
+    - Handle partial failures gracefully
 
-    func (uow *UnitOfWork) RegisterDeleted(obj interface{}) {
-        uow.deletedObjects = append(uow.deletedObjects, obj)
-    }
+3. **Security**
+    - Implement authentication at the gateway
+    - Use service-to-service authentication
+    - Encrypt sensitive data
 
-    func (uow *UnitOfWork) Commit() error {
-        tx := uow.db.Begin()
-        
-        // Handle new objects
-        for _, obj := range uow.newObjects {
-            if err := tx.Create(obj).Error; err != nil {
-                tx.Rollback()
-                return err
-            }
-        }
-        
-        // Handle dirty objects
-        for _, obj := range uow.dirtyObjects {
-            if err := tx.Save(obj).Error; err != nil {
-                tx.Rollback()
-                return err
-            }
-        }
-        
-        // Handle deleted objects
-        for _, obj := range uow.deletedObjects {
-            if err := tx.Delete(obj).Error; err != nil {
-                tx.Rollback()
-                return err
-            }
-        }
-        
-        if err := tx.Commit().Error; err != nil {
-            return err
-        }
-        
-        uow.clear()
-        return nil
-    }
+4. **Performance**
+    - Use caching strategically
+    - Implement proper timeout handling
+    - Monitor service metrics
 
-    func (uow *UnitOfWork) clear() {
-        uow.newObjects = make(map[string]interface{})
-        uow.dirtyObjects = make(map[string]interface{})
-        uow.deletedObjects = make([]interface{}, 0)
-    }
-    ```
-  </TabItem>
-</Tabs>
+## 7. 📚 References
 
-## 🔄 Related Patterns
-
-1. **Architectural Patterns**
-    - Layered Architecture
-    - Hexagonal Architecture
-    - Clean Architecture
-
-2. **Integration Patterns**
-    - Message Queue
-    - Event-Driven Architecture
-    - API Gateway
-
-3. **Data Patterns**
-    - CQRS
-    - Event Sourcing
-    - Saga Pattern
-
-## ⚙️ Best Practices
-
-### Configuration
-- Use dependency injection
-- Externalize configuration
-- Use connection pooling
-- Implement caching strategies
-
-### Monitoring
-- Implement comprehensive logging
-- Use APM tools
-- Monitor transaction boundaries
-- Track business metrics
-
-### Testing
-- Unit test domain logic
-- Integration test repositories
-- End-to-end test critical flows
-- Performance test under load
-
-## ❌ Common Pitfalls
-
-1. **Anemic Domain Model**
-    - Problem: Domain objects without behavior
-    - Solution: Rich domain models with business logic
-
-2. **Transaction Script**
-    - Problem: Procedural code in services
-    - Solution: Move business logic to domain objects
-
-3. **Smart UI Anti-pattern**
-    - Problem: Business logic in UI
-    - Solution: Proper layering and separation of concerns
-
-## 🎯 Use Cases
-
-### 1. Banking System
-Problem: Complex transaction management
-Solution: Unit of Work pattern with Domain Model
-
-### 2. Insurance Platform
-Problem: Complex business rules
-Solution: Rule Engine pattern with Domain Events
-
-### 3. E-commerce System
-Problem: Order processing workflow
-Solution: Saga pattern with Event Sourcing
-
-## 🔍 Deep Dive Topics
-
-### Thread Safety
-- Transactional boundaries
-- Concurrent access patterns
-- Lock strategies
-- Optimistic vs. Pessimistic locking
-
-### Distributed Systems
-- Distributed transactions
-- Event consistency
-- Eventual consistency
-- CAP theorem implications
-
-### Performance
-- Caching strategies
-- Query optimization
-- Batch processing
-- Connection pooling
-
-## 📚 Additional Resources
-
-### Tools
-- JPA/Hibernate
-- GORM
-- Enterprise Integration Patterns (EIP) tools
-- Message Brokers (RabbitMQ, Kafka)
-
-### References
-- "Patterns of Enterprise Application Architecture" by Martin Fowler
+- "Microservices Patterns" by Chris Richardson
+- "Building Microservices" by Sam Newman
 - "Domain-Driven Design" by Eric Evans
 - "Enterprise Integration Patterns" by Gregor Hohpe
-
-## ❓ FAQ
-
-1. **Q: When should I use Domain Model vs. Transaction Script?**
-   A: Use Domain Model for complex business logic, Transaction Script for simple CRUD operations.
-
-2. **Q: How do I handle distributed transactions?**
-   A: Consider using the Saga pattern or eventual consistency patterns.
-
-3. **Q: How do I ensure scalability with these patterns?**
-   A: Use proper caching, async processing, and consider CQRS for read/write separation.
-
-4. **Q: How do I choose between ORM and simple JDBC?**
-   A: Consider complexity of domain model, team expertise, and performance requirements.
-
-5. **Q: How do I maintain consistency in distributed systems?**
-   A: Use patterns like Event Sourcing, CQRS, and compensating transactions.

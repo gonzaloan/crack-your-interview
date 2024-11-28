@@ -156,6 +156,59 @@ const sidebars = {
                 },
               ],
             },
+            {
+              type: 'category',
+              label: 'Domain Driven Design',
+              collapsed: true,
+              items: [
+                {
+                  type: 'doc',
+                  label: 'Introduction',
+                  id: 'fundamentals/software-architecture/ddd/intro'
+                },
+                {
+                  type: 'category',
+                  label: 'Fundamentals',
+                  collapsed: true,
+                  items: [
+                    'fundamentals/software-architecture/ddd/fundamentals/ubiquitous-language',
+                    'fundamentals/software-architecture/ddd/fundamentals/bounded-contexts',
+                    'fundamentals/software-architecture/ddd/fundamentals/domain-models',
+                  ],
+                },
+                {
+                  type: 'category',
+                  label: 'Building Blocks',
+                  collapsed: true,
+                  items: [
+                    'fundamentals/software-architecture/ddd/building-blocks/entities',
+                    'fundamentals/software-architecture/ddd/building-blocks/value-objects',
+                    'fundamentals/software-architecture/ddd/building-blocks/aggregates',
+                    'fundamentals/software-architecture/ddd/building-blocks/domain-services',
+                    'fundamentals/software-architecture/ddd/building-blocks/domain-events',
+                  ],
+                },
+                {
+                  type: 'category',
+                  label: 'Architecture',
+                  collapsed: true,
+                  items: [
+                    'fundamentals/software-architecture/ddd/architecture/layers',
+                    'fundamentals/software-architecture/ddd/architecture/context-mapping',
+                  ],
+                },
+                {
+                  type: 'doc',
+                  label: 'Implementation',
+                  id: 'fundamentals/software-architecture/ddd/implementation'
+                },
+                {
+                  type: 'doc',
+                  label: 'Study Cases',
+                  id: 'fundamentals/software-architecture/ddd/study-cases'
+                },
+              ],
+            },
           ]
         },
         {
@@ -512,18 +565,146 @@ const sidebars = {
                 'tech-expertise/architecture/microservices-distributed/service-discovery',
                 'tech-expertise/architecture/microservices-distributed/resilience-patterns',
               ]
+            },
+            {
+              type: 'category',
+              label: 'Principles Patterns',
+              collapsed: true,
+              items: [
+                'tech-expertise/architecture/principles-patterns/architectural-principles',
+                'tech-expertise/architecture/principles-patterns/enterprise-patterns',
+                'tech-expertise/architecture/principles-patterns/anti-patterns',
+              ]
+            },
+            {
+              type: 'category',
+              label: 'Cloud Patterns',
+              collapsed: true,
+              items: [
+                'tech-expertise/architecture/cloud-patterns/cloud-native',
+                'tech-expertise/architecture/cloud-patterns/scalability',
+                'tech-expertise/architecture/cloud-patterns/reliability',
+                'tech-expertise/architecture/cloud-patterns/security',
+              ]
+            },
+            {
+              type: 'category',
+              label: 'Components Communication',
+              collapsed: true,
+              items: [
+                'tech-expertise/architecture/components-communication/sync-patterns',
+                'tech-expertise/architecture/components-communication/async-patterns',
+                'tech-expertise/architecture/components-communication/integration-patterns',
+              ]
             }
           ]
 
+        },
+        {
+          type: 'category',
+          label: 'Databases',
+          collapsed: true,
+          items: [
+            {
+              type: 'category',
+              label: 'SQL',
+              collapsed: true,
+              items: [
+                {
+                  type: 'category',
+                  label: 'Fundamentals',
+                  collapsed: true,
+                  items: [
+                    'tech-expertise/databases/sql/fundamentals/ddl-dml',
+                    'tech-expertise/databases/sql/fundamentals/joins-subqueries',
+                    'tech-expertise/databases/sql/fundamentals/functions-procedures'
+                  ]
+                },
+                {
+                  type: 'category',
+                  label: 'Advanced',
+                  collapsed: true,
+                  items: [
+                    'tech-expertise/databases/sql/advanced/optimization-design',
+                    'tech-expertise/databases/sql/advanced/indexing-strategies',
+                    'tech-expertise/databases/sql/advanced/performance-tuning'
+                  ]
+                },
+                {
+                  type: 'category',
+                  label: 'PLSQL',
+                  collapsed: true,
+                  items: [
+                    'tech-expertise/databases/sql/plsql/basics',
+                    'tech-expertise/databases/sql/plsql/advanced-concepts',
+                    'tech-expertise/databases/sql/plsql/best-practices'
+                  ]
+                },
+              ]
+            },
+            {
+              type: 'category',
+              label: 'NoSQL',
+              collapsed: true,
+              items: [
+                {
+                  type: 'category',
+                  label: 'Key Value NoSQL',
+                  collapsed: true,
+                  items: [
+                    'tech-expertise/databases/nosql/key-value/redis-fundamental',
+                    'tech-expertise/databases/nosql/key-value/caching-strategies',
+                    'tech-expertise/databases/nosql/key-value/data-structures'
+                  ]
+                },
+                {
+                  type: 'category',
+                  label: 'Document Stores NoSQL',
+                  collapsed: true,
+                  items: [
+                    'tech-expertise/databases/nosql/document-stores/mongodb-fundamentals',
+                    'tech-expertise/databases/nosql/document-stores/aggregation-pipeline',
+                    'tech-expertise/databases/nosql/document-stores/schema-design'
+                  ]
+                },
+                {
+                  type: 'category',
+                  label: 'Graph Databases',
+                  collapsed: true,
+                  items: [
+                    'tech-expertise/databases/nosql/graph-databases/neo4j-fundamentals',
+                    'tech-expertise/databases/nosql/graph-databases/graph-modeling',
+                    'tech-expertise/databases/nosql/graph-databases/cypher-queries'
+                  ]
+                },
+              ]
+            },
+            {
+              type: 'category',
+              label: 'New SQL',
+              collapsed: true,
+              items: [
+                'tech-expertise/databases/new-sql/distributed-sql-architecture',
+                'tech-expertise/databases/new-sql/distributed-sql-implementation',
+                'tech-expertise/databases/new-sql/horizontal-scaling',
+                'tech-expertise/databases/new-sql/replication',
+                'tech-expertise/databases/new-sql/acid-guarantees',
+                'tech-expertise/databases/new-sql/consensus-protocols',
+
+              ]
+            }
+          ]
         }
       ]
     },
+
     {
       type: 'category',
       label: 'Interview Questions',
       collapsed: true,
       items: [
-          'interviews/technical-backend-analyst'
+          'interviews/technical-backend-analyst',
+          'interviews/cloud-engineer',
       ]
     }
   ],
