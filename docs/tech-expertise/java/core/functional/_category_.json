@@ -1,8 +1,0 @@
-{
-  "label": "Functional Programming & Streams",
-  "position": 4,
-  "link": {
-    "type": "generated-index",
-    "description": "Advanced concepts in Java Functional Programming, including Streams, Lambda expressions, and functional interfaces."
-  }
-}

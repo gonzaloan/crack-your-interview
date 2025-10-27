@@ -1,10 +1,10 @@
-# Software Architect Study Guide
+# Study Guide
 
-This repository contains a comprehensive study guide for software architects and senior engineers. The guide covers a wide range of topics related to software architecture, design patterns, best practices, and advanced concepts in Java programming.
+This is a study guide / cheatsheet of whatever I found necessary to know to achieve a good IT role.   
 
 ## About the Project
 
-The Software Architect Study Guide is built using [Docusaurus](https://docusaurus.io/), a modern static website generator that makes it easy to create and maintain documentation websites. Docusaurus provides a simple and intuitive way to organize and present content, making it an ideal choice for this study guide.
+The Study Guide is built using [Docusaurus](https://docusaurus.io/), a modern static website generator that makes it easy to create and maintain documentation websites. Docusaurus provides a simple and intuitive way to organize and present content, making it an ideal choice for this study guide.
 
 ## Getting Started
 
@@ -64,7 +64,7 @@ git checkout -b my-feature
 
 3. Make your changes and commit them with descriptive messages:
 ```
-git commit -m "Add new section on design patterns"
+git commit -m "feat: Add new section on design patterns"
 ```
 
 4. Push your changes to your forked repository:

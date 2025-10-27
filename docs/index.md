@@ -3,63 +3,63 @@ slug: /
 sidebar_position: 1
 ---
 
-# Technical Engineering Study Guide 🎯
+# Study Guide / Cheatsheet for Advanced Engineers
 
-## Welcome to Your Complete Engineering Journey! 🚀
+## Welcome to Your Complete Engineering Journey!
 
 This comprehensive study guide is designed to take you through the essential aspects of modern software engineering, from fundamental concepts to advanced technical leadership. Whether you're an experienced developer looking to level up your skills or a tech lead aiming to strengthen your knowledge base, this guide provides structured learning paths across critical domains.
 
 ## Guide Overview 📋
 
-Our study guide covers six main pillars of software engineering expertise:
+The guide / cheatsheet has 8 modules
 
-### 1. Distributed Systems Fundamentals 🌐
-- Deep dive into CAP theorem
-- Consistency and availability patterns
-- Distributed system design patterns
-- Scalability fundamentals
-- Caching strategies
-- Load balancing techniques
+### 1. Software Architecture Fundamentals
+- Architectural Design Principles
+- Architectural Patterns
+- Domain Driven Design
+- Clean Architecture & Hexagonal Architecture
 
-### 2. Technical Expertise 💻
-- Java ecosystem mastery
-- Golang proficiency
-- Database technologies
-- Performance optimization
-- Concurrency patterns
-- Framework expertise
+### 2. Distributed Systems
+- Fundamental Theory
+- Communication Patterns
+- Resilience & Fault Tolerance
+- Data Management in Distributed Systems
 
-### 3. Security & DevOps 🔐
-- Cloud platforms (AWS, GCP)
-- Container orchestration
-- CI/CD pipelines
-- Security best practices
-- Infrastructure management
-- Secure coding principles
+### 3. Scalability & Performance
+- Scalability Principles
+- Advanced Caching
+- Database Optimization
+- Performance Engineering
 
-### 4. Systems & Data 📊
-- Big data processing
-- Streaming systems
-- Monitoring solutions
-- Data storage strategies
-- Real-time processing
-- Distributed data management
+### 4. Observability & Operations
+- 3 Pillars
+- Alerting & On Call
+- Reliability Engineering
 
-### 5. Technical Leadership 🎯
-- Architecture patterns
-- Technical mentorship
-- Decision making
-- Documentation practices
-- Team leadership
-- Technical strategy
+### 5. Security in Architecture
+- Security By Design
+- AuthN & AuthZ
+- Data Security
+- Application Security
 
-### 6. Soft Skills 🌟
-- Technical communication
-- Leadership development
-- Business alignment
-- Presentation skills
-- Documentation expertise
-- Strategic thinking
+### 6. Advanced Cloud Architecture
+- Multi-Cloud & Hybrid Cloud
+- Serverless Architecture
+- Container Orchestration
+- Infrastructure as Code
+- Advance Cost Optimization
+
+### 7. Advanced Topics
+- Data Engineering
+- Machine Learning Ops
+- Front-End Architecture
+- Emerging Tech
+
+### 8. System Design
+- Design Framework
+- Classic Problems
+- Behavioral Interview
+
 
 ## How to Use This Guide 📚
 
