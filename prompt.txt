@@ -1,0 +1,235 @@
+# Documentation Structure Prompt
+
+## Objective
+Create concise, memorizable cheatsheet-style documentation for software engineering concepts. Each document should be brief, practical, and easy to understand - optimized for quick reference and retention.
+
+## Standard Document Structure
+
+### 1. Title & Brief Definition (2-3 sentences max)
+- Start with the concept name as H1
+- Provide a clear, concise definition
+- Explain WHY it matters in 1 sentence
+
+### 2. Key Concepts (Bullet Points)
+- List 3-5 core concepts or principles
+- Use bullet points for scannability
+- Keep each point to one line when possible
+- Focus on the "what" and "why", not extensive "how"
+
+### 3. Diagram (Only when Applicable)
+- Include simple mermaid diagrams when adds a clear value to the point
+- Keep diagrams minimal and clear
+- Skip diagrams for purely theoretical concepts
+
+### 4. Code Examples
+- Provide **basic, practical examples** in Java AND Go.
+- Examples can be funny, not using always the same examples, generate fun examples that can make me laugh
+- Each example should be **10-25 lines maximum**
+- Focus on demonstrating the core concept, not production-ready code
+- Include inline comments for clarity
+- Use realistic but simple scenarios
+
+**When to include code:**
+- Design patterns
+- Architecture implementations
+- API designs
+- Data structures
+- Algorithms
+- Security implementations
+
+**When to skip code:**
+- High-level concepts (Conway's Law, organizational patterns)
+- Theoretical principles without direct code representation
+- Leadership and soft skills topics
+- Process-oriented concepts
+
+### 5. Practical Takeaways (3-5 bullet points)
+- Quick wins or rules of thumb
+- Common pitfalls to avoid
+- When to use vs. when not to use
+- Key decision factors
+
+### 6. Related Concepts (Optional)
+- 2-3 related topics with brief context
+- Links to other documents when applicable
+
+---
+
+## Style Guidelines
+
+### Tone & Language
+- **Concise**: No fluff or unnecessary elaboration
+- **Direct**: Get to the point immediately
+- **Practical**: Focus on actionable insights
+- **Technical**: Use proper terminology but explain jargon
+- **English**: All content must be in English
+
+### Formatting Rules
+- Use H1 (#) for main title only
+- Use H2 (##) for major sections
+- Use H3 (###) for subsections if needed
+- Use bullet points extensively
+- Use code blocks with language identifiers
+- Use **bold** for emphasis on key terms
+- Use `inline code` for technical terms, commands, or class names
+
+### Length Guidelines
+- **Total document**: 200-400 lines maximum
+- **Definition section**: 2-3 sentences
+- **Key concepts**: 3-5 bullet points
+- **Code examples**: 10-25 lines per language
+- **Takeaways**: 3-5 bullet points
+
+### Code Example Guidelines
+- Keep examples simple and focused
+- Use common, understandable scenarios
+- Avoid external dependencies when possible
+- Include error handling only when essential to the concept
+- Use descriptive variable/function names
+- Add comments to explain non-obvious parts
+
+---
+
+## Template Structure
+
+```markdown
+# [Concept Name]
+
+[2-3 sentence definition explaining WHAT it is and WHY it matters]
+
+## Key Concepts
+
+- **[Concept 1]**: Brief explanation
+- **[Concept 2]**: Brief explanation
+- **[Concept 3]**: Brief explanation
+- **[Concept 4]**: Brief explanation (optional)
+- **[Concept 5]**: Brief explanation (optional)
+
+## Diagram
+
+[Include diagram if applicable - ASCII art, mermaid, or flowchart]
+[Skip this section if not applicable]
+
+## Example in Java
+
+```java
+// Brief scenario description
+// 10-25 lines of clear, commented code demonstrating the concept
+```
+
+## Example in Go
+
+```go
+// Brief scenario description
+// 10-25 lines of clear, commented code demonstrating the concept
+```
+
+[Skip code sections if concept is theoretical/organizational]
+
+## Key Takeaways
+
+- **When to use**: [Brief guidance]
+- **When to avoid**: [Brief guidance]
+- **Common pitfall**: [Brief warning]
+- **Pro tip**: [Practical advice]
+- **Remember**: [Key rule of thumb]
+
+## Related Concepts
+
+- **[Related Topic 1]**: How it relates
+- **[Related Topic 2]**: How it relates
+- **[Related Topic 3]**: How it relates (optional)
+```
+
+---
+
+## Example Topics by Category
+
+### Requires Code Examples:
+- SOLID Principles
+- Design Patterns (Factory, Observer, Strategy, etc.)
+- Event-Driven Architecture
+- CQRS & Event Sourcing
+- API Gateway implementations
+- Circuit Breaker pattern
+- Repository pattern
+- Aggregates & Entities (DDD)
+- Authentication mechanisms
+- Caching strategies
+
+### No Code Examples Needed:
+- Conway's Law
+- CAP Theorem (theoretical explanation)
+- Organizational patterns
+- Leadership principles
+- Communication strategies
+- High-level cloud concepts
+
+### May or May Not Need Code:
+- Bounded Contexts (might show config/structure)
+- Strangler Fig (might show routing logic)
+- Blue-Green Deployment (might show scripts)
+
+---
+
+## Quality Checklist
+
+Before considering a document complete, verify:
+
+- [ ] Definition is clear and under 3 sentences
+- [ ] 3-5 key concepts listed
+- [ ] Diagram included if applicable
+- [ ] Code examples present if applicable
+- [ ] Java example is 10-25 lines
+- [ ] Go example is 10-25 lines
+- [ ] Code is properly commented
+- [ ] 3-5 practical takeaways listed
+- [ ] Document is under 400 lines
+- [ ] No unnecessary elaboration
+- [ ] All content in English
+- [ ] Proper markdown formatting
+- [ ] Can be scanned/understood in 2-3 minutes
+
+---
+
+## Anti-Patterns to Avoid
+
+❌ **Don't:**
+- Write long paragraphs
+- Include production-ready boilerplate
+- Over-explain basic concepts
+- Add unnecessary sections
+- Use complex examples requiring external libraries
+- Include multiple variations of the same example
+- Add extensive historical context
+- Write essay-style explanations
+
+✅ **Do:**
+- Keep it scannable
+- Use bullet points
+- Provide minimal working examples
+- Focus on core concepts
+- Make it memorable
+- Enable quick reference
+- Be practical and actionable
+
+---
+
+## Example Output Length
+
+A well-structured document should be:
+- **Minimum**: 150 lines (for simpler concepts)
+- **Target**: 200-300 lines (most concepts)
+- **Maximum**: 400 lines (complex concepts with code)
+
+If approaching 400+ lines, consider:
+- Splitting into multiple documents
+- Removing unnecessary detail
+- Simplifying code examples
+- Consolidating related concepts
+
+---
+
+## Final Note
+
+This is a **cheatsheet and study guide**, not comprehensive documentation. The goal is to enable engineers to quickly understand, remember, and apply concepts. Prioritize clarity, brevity, and practicality over completeness.

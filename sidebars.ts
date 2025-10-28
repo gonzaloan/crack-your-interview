@@ -7,213 +7,309 @@ const sidebars = {
     },
     {
       type: 'category',
-      label: 'Software Architecture Fundamentals',
+      label: 'Module 1: Architecture Fundamentals',
       collapsed: true,
+      link: {
+        type: 'doc',
+        id: 'module-1-architecture-fundamentals/README',
+      },
       items: [
         {
-            type: 'category',
-            label: 'Structural',
-            collapsed: true,
-            items: [
-              'fundamentals/principles-architectural-design/solid'
-            ],
+          type: 'category',
+          label: '1.1 Design Principles',
+          collapsed: true,
+          link: {
+            type: 'doc',
+            id: 'module-1-architecture-fundamentals/1.1-design-principles/README',
+          },
+          items: [
+            'module-1-architecture-fundamentals/1.1-design-principles/overview',
+            'module-1-architecture-fundamentals/1.1-design-principles/solid-principles',
+            'module-1-architecture-fundamentals/1.1-design-principles/dry-kiss-yagni',
+            'module-1-architecture-fundamentals/1.1-design-principles/conways-law',
+            'module-1-architecture-fundamentals/1.1-design-principles/separation-of-concerns',
+            'module-1-architecture-fundamentals/1.1-design-principles/principle-of-least-surprise',
+          ],
         },
-        //     {
-        //       type: 'category',
-        //       label: 'Design Patterns',
-        //       collapsed: true,
-        //       items: [
-        //         {
-        //           type: 'category',
-        //           label: 'Creational',
-        //           collapsed: true,
-        //           items: [
-        //             'fundamentals/software-architecture/design-patterns/creational/factory',
-        //             'fundamentals/software-architecture/design-patterns/creational/abstract-factory',
-        //             'fundamentals/software-architecture/design-patterns/creational/builder',
-        //             'fundamentals/software-architecture/design-patterns/creational/prototype',
-        //             'fundamentals/software-architecture/design-patterns/creational/singleton',
-        //           ],
-        //         },
-        //         {
-        //           type: 'category',
-        //           label: 'Structural',
-        //           collapsed: true,
-        //           items: [
-        //             'fundamentals/software-architecture/design-patterns/structural/adapter',
-        //             'fundamentals/software-architecture/design-patterns/structural/bridge',
-        //             'fundamentals/software-architecture/design-patterns/structural/composite',
-        //             'fundamentals/software-architecture/design-patterns/structural/decorator',
-        //             'fundamentals/software-architecture/design-patterns/structural/facade',
-        //             'fundamentals/software-architecture/design-patterns/structural/proxy',
-        //           ],
-        //         },
-        //         {
-        //           type: 'category',
-        //           label: 'Behavioral',
-        //           collapsed: true,
-        //           items: [
-        //             'fundamentals/software-architecture/design-patterns/behavioral/observer',
-        //             'fundamentals/software-architecture/design-patterns/behavioral/strategy',
-        //             'fundamentals/software-architecture/design-patterns/behavioral/command',
-        //             'fundamentals/software-architecture/design-patterns/behavioral/state',
-        //             'fundamentals/software-architecture/design-patterns/behavioral/template_method',
-        //           ],
-        //         },
-        //       ],
-        //     },
-        //     {
-        //       type: 'category',
-        //       label: 'SOLID',
-        //       collapsed: true,
-        //       items: [
-        //         'fundamentals/software-architecture/solid/introduction',
-        //         'fundamentals/software-architecture/solid/single-responsibility',
-        //         'fundamentals/software-architecture/solid/open-closed',
-        //         'fundamentals/software-architecture/solid/liskov-substitution',
-        //         'fundamentals/software-architecture/solid/interface-segregation',
-        //         'fundamentals/software-architecture/solid/dependency-inversion',
-        //       ],
-        //     },
-        //     {
-        //       type: 'category',
-        //       label: 'DRY',
-        //       collapsed: true,
-        //       items: [
-        //         'fundamentals/software-architecture/dry/dry',
-        //       ],
-        //     },
-        //     {
-        //       type: 'category',
-        //       label: 'Clean Code',
-        //       collapsed: true,
-        //       items: [
-        //         'fundamentals/software-architecture/clean-code/intro',
-        //         'fundamentals/software-architecture/clean-code/naming-conventions',
-        //         'fundamentals/software-architecture/clean-code/functions',
-        //         'fundamentals/software-architecture/clean-code/comments',
-        //         'fundamentals/software-architecture/clean-code/error-handling',
-        //       ],
-        //     },
-        //
-        //     {
-        //       type: 'category',
-        //       label: 'Clean Architecture',
-        //       collapsed: true,
-        //       items: [
-        //         {
-        //           type: 'doc',
-        //           label: 'Introduction',
-        //           id: 'fundamentals/software-architecture/clean-architecture/intro'
-        //         },
-        //         {
-        //           type: 'category',
-        //           label: 'Layers',
-        //           collapsed: true,
-        //           items: [
-        //             'fundamentals/software-architecture/clean-architecture/layers/entities',
-        //             'fundamentals/software-architecture/clean-architecture/layers/use-cases',
-        //             'fundamentals/software-architecture/clean-architecture/layers/interfaces',
-        //             'fundamentals/software-architecture/clean-architecture/layers/frameworks',
-        //           ],
-        //         },
-        //         {
-        //           type: 'category',
-        //           label: 'Principles',
-        //           collapsed: true,
-        //           items: [
-        //             'fundamentals/software-architecture/clean-architecture/principles/principles',
-        //           ],
-        //         },
-        //         {
-        //           type: 'category',
-        //           label: 'Patterns',
-        //           collapsed: true,
-        //           items: [
-        //             'fundamentals/software-architecture/clean-architecture/patterns/repository-pattern',
-        //             'fundamentals/software-architecture/clean-architecture/patterns/presenter-pattern',
-        //             'fundamentals/software-architecture/clean-architecture/patterns/gateway-pattern',
-        //             'fundamentals/software-architecture/clean-architecture/patterns/factory-pattern',
-        //           ],
-        //         },
-        //         {
-        //           type: 'category',
-        //           label: 'Implementation',
-        //           collapsed: true,
-        //           items: [
-        //             'fundamentals/software-architecture/clean-architecture/implementation/project-structure',
-        //             'fundamentals/software-architecture/clean-architecture/implementation/testing-strategy',
-        //             'fundamentals/software-architecture/clean-architecture/implementation/dependency-management',
-        //             'fundamentals/software-architecture/clean-architecture/implementation/api-design',
-        //           ],
-        //         },
-        //         {
-        //           type: 'category',
-        //           label: 'Examples',
-        //           collapsed: true,
-        //           items: [
-        //             'fundamentals/software-architecture/clean-architecture/examples/web-application',
-        //             'fundamentals/software-architecture/clean-architecture/examples/microservices',
-        //             'fundamentals/software-architecture/clean-architecture/examples/monolithic-app',
-        //           ],
-        //         },
-        //       ],
-        //     },
-        //     {
-        //       type: 'category',
-        //       label: 'Domain Driven Design',
-        //       collapsed: true,
-        //       items: [
-        //         {
-        //           type: 'doc',
-        //           label: 'Introduction',
-        //           id: 'fundamentals/software-architecture/ddd/intro'
-        //         },
-        //         {
-        //           type: 'category',
-        //           label: 'Fundamentals',
-        //           collapsed: true,
-        //           items: [
-        //             'fundamentals/software-architecture/ddd/fundamentals/ubiquitous-language',
-        //             'fundamentals/software-architecture/ddd/fundamentals/bounded-contexts',
-        //             'fundamentals/software-architecture/ddd/fundamentals/domain-models',
-        //           ],
-        //         },
-        //         {
-        //           type: 'category',
-        //           label: 'Building Blocks',
-        //           collapsed: true,
-        //           items: [
-        //             'fundamentals/software-architecture/ddd/building-blocks/entities',
-        //             'fundamentals/software-architecture/ddd/building-blocks/value-objects',
-        //             'fundamentals/software-architecture/ddd/building-blocks/aggregates',
-        //             'fundamentals/software-architecture/ddd/building-blocks/domain-services',
-        //             'fundamentals/software-architecture/ddd/building-blocks/domain-events',
-        //           ],
-        //         },
-        //         {
-        //           type: 'category',
-        //           label: 'Architecture',
-        //           collapsed: true,
-        //           items: [
-        //             'fundamentals/software-architecture/ddd/architecture/layers',
-        //             'fundamentals/software-architecture/ddd/architecture/context-mapping',
-        //           ],
-        //         },
-        //         {
-        //           type: 'doc',
-        //           label: 'Implementation',
-        //           id: 'fundamentals/software-architecture/ddd/implementation'
-        //         },
-        //         {
-        //           type: 'doc',
-        //           label: 'Study Cases',
-        //           id: 'fundamentals/software-architecture/ddd/study-cases'
-        //         },
-        //       ],
-        //     },
-          ]
+        {
+          type: 'category',
+          label: '1.2 Architectural Patterns',
+          collapsed: true,
+          link: {
+            type: 'doc',
+            id: 'module-1-architecture-fundamentals/1.2-architectural-patterns/README',
+          },
+          items: [
+            'module-1-architecture-fundamentals/1.2-architectural-patterns/overview',
+            'module-1-architecture-fundamentals/1.2-architectural-patterns/monolith-vs-microservices',
+            'module-1-architecture-fundamentals/1.2-architectural-patterns/event-driven-architecture',
+            'module-1-architecture-fundamentals/1.2-architectural-patterns/cqrs',
+            'module-1-architecture-fundamentals/1.2-architectural-patterns/event-sourcing',
+            'module-1-architecture-fundamentals/1.2-architectural-patterns/saga-pattern',
+            'module-1-architecture-fundamentals/1.2-architectural-patterns/strangler-fig',
+            'module-1-architecture-fundamentals/1.2-architectural-patterns/sidecar-pattern',
+            'module-1-architecture-fundamentals/1.2-architectural-patterns/api-gateway',
+            'module-1-architecture-fundamentals/1.2-architectural-patterns/bff-pattern',
+          ],
         },
+        {
+          type: 'category',
+          label: '1.3 Domain-Driven Design',
+          collapsed: true,
+          link: {
+            type: 'doc',
+            id: 'module-1-architecture-fundamentals/1.3-domain-driven-design/README',
+          },
+          items: [
+            'module-1-architecture-fundamentals/1.3-domain-driven-design/overview',
+            'module-1-architecture-fundamentals/1.3-domain-driven-design/bounded-contexts',
+            'module-1-architecture-fundamentals/1.3-domain-driven-design/ubiquitous-language',
+            'module-1-architecture-fundamentals/1.3-domain-driven-design/aggregates-entities-value-objects',
+            'module-1-architecture-fundamentals/1.3-domain-driven-design/domain-events',
+            'module-1-architecture-fundamentals/1.3-domain-driven-design/anti-corruption-layer',
+            'module-1-architecture-fundamentals/1.3-domain-driven-design/context-mapping',
+          ],
+        },
+        {
+          type: 'category',
+          label: '1.4 Clean & Hexagonal Architecture',
+          collapsed: true,
+          link: {
+            type: 'doc',
+            id: 'module-1-architecture-fundamentals/1.4-clean-hexagonal-architecture/README',
+          },
+          items: [
+            'module-1-architecture-fundamentals/1.4-clean-hexagonal-architecture/overview',
+            'module-1-architecture-fundamentals/1.4-clean-hexagonal-architecture/dependency-inversion',
+            'module-1-architecture-fundamentals/1.4-clean-hexagonal-architecture/ports-and-adapters',
+            'module-1-architecture-fundamentals/1.4-clean-hexagonal-architecture/layered-architecture',
+            'module-1-architecture-fundamentals/1.4-clean-hexagonal-architecture/comparison',
+          ],
+        },
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Module 2: Distributed Systems',
+      collapsed: true,
+      link: {
+        type: 'doc',
+        id: 'module-2-distributed-systems/README',
+      },
+      items: [
+        {
+          type: 'doc',
+          label: '2.1 Fundamental Concepts',
+          id: 'module-2-distributed-systems/2.1-fundamental-concepts/README',
+        },
+        {
+          type: 'doc',
+          label: '2.2 Communication Patterns',
+          id: 'module-2-distributed-systems/2.2-communication-patterns/README',
+        },
+        {
+          type: 'doc',
+          label: '2.3 Consistency & Consensus',
+          id: 'module-2-distributed-systems/2.3-consistency-consensus/README',
+        },
+        {
+          type: 'doc',
+          label: '2.4 Data Management',
+          id: 'module-2-distributed-systems/2.4-data-management/README',
+        },
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Module 3: Scalability & Performance',
+      collapsed: true,
+      link: {
+        type: 'doc',
+        id: 'module-3-scalability-performance/README',
+      },
+      items: [
+        {
+          type: 'doc',
+          label: '3.1 Scalability Principles',
+          id: 'module-3-scalability-performance/3.1-scalability-principles/README',
+        },
+        {
+          type: 'doc',
+          label: '3.2 Caching Strategies',
+          id: 'module-3-scalability-performance/3.2-caching-strategies/README',
+        },
+        {
+          type: 'doc',
+          label: '3.3 Database Optimization',
+          id: 'module-3-scalability-performance/3.3-database-optimization/README',
+        },
+        {
+          type: 'doc',
+          label: '3.4 Performance Engineering',
+          id: 'module-3-scalability-performance/3.4-performance-engineering/README',
+        },
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Module 4: Observability & Operations',
+      collapsed: true,
+      link: {
+        type: 'doc',
+        id: 'module-4-observability-operations/README',
+      },
+      items: [
+        {
+          type: 'doc',
+          label: '4.1 Three Pillars',
+          id: 'module-4-observability-operations/4.1-three-pillars/README',
+        },
+        {
+          type: 'doc',
+          label: '4.2 Alerting & On-Call',
+          id: 'module-4-observability-operations/4.2-alerting-oncall/README',
+        },
+        {
+          type: 'doc',
+          label: '4.3 Reliability Engineering',
+          id: 'module-4-observability-operations/4.3-reliability-engineering/README',
+        },
+        {
+          type: 'doc',
+          label: '4.4 Incident Management',
+          id: 'module-4-observability-operations/4.4-incident-management/README',
+        },
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Module 5: Security',
+      collapsed: true,
+      link: {
+        type: 'doc',
+        id: 'module-5-security/README',
+      },
+      items: [
+        {
+          type: 'doc',
+          label: '5.1 Security by Design',
+          id: 'module-5-security/5.1-security-by-design/README',
+        },
+        {
+          type: 'doc',
+          label: '5.2 Authentication & Authorization',
+          id: 'module-5-security/5.2-authentication-authorization/README',
+        },
+        {
+          type: 'doc',
+          label: '5.3 Data Security',
+          id: 'module-5-security/5.3-data-security/README',
+        },
+        {
+          type: 'doc',
+          label: '5.4 Application Security',
+          id: 'module-5-security/5.4-application-security/README',
+        },
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Module 6: Cloud Architecture',
+      collapsed: true,
+      link: {
+        type: 'doc',
+        id: 'module-6-cloud-architecture/README',
+      },
+      items: [
+        {
+          type: 'doc',
+          label: '6.1 Multi-Cloud & Hybrid',
+          id: 'module-6-cloud-architecture/6.1-multi-cloud/README',
+        },
+        {
+          type: 'doc',
+          label: '6.2 Serverless',
+          id: 'module-6-cloud-architecture/6.2-serverless/README',
+        },
+        {
+          type: 'doc',
+          label: '6.3 Container Orchestration',
+          id: 'module-6-cloud-architecture/6.3-container-orchestration/README',
+        },
+        {
+          type: 'doc',
+          label: '6.4 Infrastructure as Code',
+          id: 'module-6-cloud-architecture/6.4-infrastructure-as-code/README',
+        },
+        {
+          type: 'doc',
+          label: '6.5 Cost Optimization',
+          id: 'module-6-cloud-architecture/6.5-cost-optimization/README',
+        },
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Module 7: Technical Leadership',
+      collapsed: true,
+      link: {
+        type: 'doc',
+        id: 'module-7-leadership/README',
+      },
+      items: [
+        {
+          type: 'doc',
+          label: '7.1 Technical Leadership',
+          id: 'module-7-leadership/7.1-technical-leadership/README',
+        },
+        {
+          type: 'doc',
+          label: '7.2 Communication & Influence',
+          id: 'module-7-leadership/7.2-communication-influence/README',
+        },
+        {
+          type: 'doc',
+          label: '7.3 Mentorship & Development',
+          id: 'module-7-leadership/7.3-mentorship-development/README',
+        },
+        {
+          type: 'doc',
+          label: '7.4 Product Thinking',
+          id: 'module-7-leadership/7.4-product-thinking/README',
+        },
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Module 8: Advanced Topics',
+      collapsed: true,
+      link: {
+        type: 'doc',
+        id: 'module-8-advanced-topics/README',
+      },
+      items: [
+        {
+          type: 'doc',
+          label: '8.1 Data Engineering',
+          id: 'module-8-advanced-topics/8.1-data-engineering/README',
+        },
+        {
+          type: 'doc',
+          label: '8.2 ML Operations',
+          id: 'module-8-advanced-topics/8.2-ml-operations/README',
+        },
+        {
+          type: 'doc',
+          label: '8.3 Frontend Architecture',
+          id: 'module-8-advanced-topics/8.3-frontend-architecture/README',
+        },
+        {
+          type: 'doc',
+          label: '8.4 Emerging Technologies',
+          id: 'module-8-advanced-topics/8.4-emerging-technologies/README',
+        },
+      ],
+    },
   ],
 };
 

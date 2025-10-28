@@ -1,0 +1,3 @@
+# BFF Pattern (Backend for Frontend)
+
+Content coming soon...

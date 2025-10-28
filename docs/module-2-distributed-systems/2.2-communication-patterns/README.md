@@ -1,0 +1,3 @@
+# Communication Patterns
+
+Content coming soon...
