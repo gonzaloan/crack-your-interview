@@ -310,6 +310,22 @@ const sidebars = {
         },
       ],
     },
+    {
+      type: 'category',
+      label: 'Module 9: AWS Certifications',
+      collapsed: true,
+      link: {
+        type: 'doc',
+        id: 'module-9-aws-certifications/README',
+      },
+      items: [
+        {
+          type: 'doc',
+          label: '9.1 AWS ML Specialty',
+          id: 'module-9-aws-certifications/9.1-ml-specialty/README',
+        },
+      ],
+    },
   ],
 };
 

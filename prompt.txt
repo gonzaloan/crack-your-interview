@@ -78,7 +78,7 @@ Create concise, memorizable cheatsheet-style documentation for software engineer
 - **Definition section**: 2-3 sentences
 - **Key concepts**: 3-5 bullet points
 - **Code examples**: 10-25 lines per language
-- **Takeaways**: 3-5 bullet points
+- **yTakeaways**: 3-5 bullet points
 
 ### Code Example Guidelines
 - Keep examples simple and focused
