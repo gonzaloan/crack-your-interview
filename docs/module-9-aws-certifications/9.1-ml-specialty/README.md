@@ -39,7 +39,7 @@
 - **Use case example**: Processing millions of images to train a computer vision model, or processing genomic data
 
 ### Data Ingestion
-
+ll
 **What is Data Ingestion?** The process of moving data from its source (databases, applications, sensors, etc.) into your ML system. It's like filling up a car's gas tank before a trip.
 
 **Batch Ingestion (Processing data in chunks)**
