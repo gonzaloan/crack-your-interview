@@ -324,6 +324,11 @@ const sidebars = {
           label: '9.1 AWS ML Specialty',
           id: 'module-9-aws-certifications/9.1-ml-specialty/README',
         },
+        {
+          type: 'doc',
+          label: '9.2 AWS Network Specialty',
+          id: 'module-9-aws-certifications/9.2-network-specialty/README',
+        },
       ],
     },
   ],
